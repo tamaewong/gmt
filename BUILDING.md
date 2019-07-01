@@ -87,6 +87,9 @@ Install the GMT dependencies with:
 
     # to build the documentation in PDF format
     sudo apt-get install texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra latexmk
+    
+    # to enable gmt docs to open HTML docs and graphics files
+    sudo apt-get install xdg-utils
 
 ### RHEL/CentOS
 
@@ -116,6 +119,9 @@ You then can install the GMT dependencies with:
 
     # to build the documentation in PDF format
     sudo yum install python3-sphinx-latex
+    
+    # to enable gmt docs to open HTML docs and graphics files
+    sudo yum install xdg-utils
 
 ### Fedora
 
@@ -141,6 +147,9 @@ Install the GMT dependencies with:
 
     # to build the documentation in PDF format
     sudo dnf install python-sphinx-latex
+    
+    # to enable gmt docs to open HTML docs and graphics files
+    sudo dnf install xdg-utils
 
 ### Archlinux
 
@@ -162,6 +171,9 @@ Install the gmt dependencies with:
     # to build the documentation
     sudo pacman -S python-sphinx
 
+    # to enable gmt docs to open HTML docs and graphics files
+    sudo pacman -S xdg-utils
+
 ### FreeBSD
 
 For FreeBSD, there are prepackaged development binaries available.
@@ -181,6 +193,9 @@ Install the gmt dependencies with:
 
     # to build the documentation
     sudo pkg install py36-sphinx
+
+    # to enable gmt docs to open HTML docs and graphics files
+    sudo pkg xdg-utils
 
 ### macOS with homebrew
 
