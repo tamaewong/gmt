@@ -1117,6 +1117,7 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 						gmt_setpen (GMT, &Ctrl->W.pen[k]);
 						last_pen_level = k;
 					}
+					PSL_comment (PSL, "Shore Bin # %d, Level %d", bin, p[i].level);
 					gmt_plot_line (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.pen, GMT->current.plot.n, PSL_LINEAR);
 				}
 			}
@@ -1148,6 +1149,9 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 		for (ind = 0; ind < r.nb; ind++) {	/* Loop over necessary bins only */
 
 			bin = r.bins[ind];
+#ifdef DEBUG
+			if (Ctrl->debug.active && bin != Ctrl->debug.bin) continue;
+#endif
 			gmt_get_br_bin (GMT, ind, &r, Ctrl->I.list, Ctrl->I.n_rlevels);
 
 			if (r.ns == 0) continue;
@@ -1187,6 +1191,7 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 						gmt_setpen (GMT, &Ctrl->I.pen[k]);
 						last_k = k;
 					}
+					PSL_comment (PSL, "River Bin # %d, Level %d", bin, p[i].level);
 					gmt_plot_line (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.pen, GMT->current.plot.n, PSL_LINEAR);
 				}
 			}
@@ -1215,6 +1220,10 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 		for (ind = 0; ind < b.nb; ind++) {	/* Loop over necessary bins only */
 
 			bin = b.bins[ind];
+#ifdef DEBUG
+			if (Ctrl->debug.active && bin != Ctrl->debug.bin) continue;
+#endif
+
 			gmt_get_br_bin (GMT, ind, &b, Ctrl->N.list, Ctrl->N.n_blevels);
 
 			if (b.ns == 0) continue;
@@ -1255,6 +1264,7 @@ int GMT_pscoast (void *V_API, int mode, void *args) {
 						gmt_setpen (GMT, &Ctrl->N.pen[k]);
 						last_k = k;
 					}
+					PSL_comment (PSL, "Border Bin # %d, Level %d\n", bin, p[i].level);
 					gmt_plot_line (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.pen, GMT->current.plot.n, PSL_LINEAR);
 				}
 			}
