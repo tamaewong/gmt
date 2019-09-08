@@ -75,11 +75,11 @@ int GMT_docs (void *V_API, int mode, void *args) {
 #ifdef WIN32
 	static const char *file_viewer = "cmd /c start";
 	bool together = false;	/* Must call file_viewer separately on each file */
-	ps_viewer = "gsview64c";
+	ps_viewer = "cmd /c start gsview64c";
 #elif defined(__APPLE__)
 	static const char *file_viewer = "open";
 	bool together = true;	/* Can call file_viewer once with all files */
-	ps_viewer = "gv";
+	ps_viewer = (char *)file_viewer;
 #else
 	static const char *file_viewer = "xdg-open";
 	bool together = false;	/* Must call file_viewer separately on each file */
@@ -127,9 +127,13 @@ int GMT_docs (void *V_API, int mode, void *args) {
 				printf ("%s\n", opt->arg);
 			}
 			else {	/* Open in suitable viewer */
-#ifdef __APPLE__
-				/* Under macOS a PostScript file will be opened by open via conversion to PDF.  If the user has gv installed
-				 * then we rather open the PostScript file in gv */
+#ifdef WIN32
+				/* On Windows we can use gsview64c on the PS file - not ideal but better than no PS viewer */
+				if (gmt_session_code[id] == 'p')
+					ps_viewer = "cmd /c start gsview64c";	/* We are shipping gsview64c so it is there */
+#elif defined(__APPLE__)
+				/* Under macOS a PostScript file will be opened by open via conversion to PDF.
+				 * If the user has gv installed then we rather open the PostScript file in gv */
 				if (gmt_session_code[id] == 'p') {	/* PostScript file, check if a PostScript viewer "gv" is available */
 					char line[GMT_LEN64] = {""};
 					FILE *fp = NULL;
