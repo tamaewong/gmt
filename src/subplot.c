@@ -1052,7 +1052,7 @@ int GMT_subplot (void *V_API, int mode, void *args) {
 				else	/* No subplot tqgs, write default fillers */
 					fprintf (fp, "-\t0\t0\t0\t0\tBL\tBL\t-\t-");
 				/* Now the four -B settings items placed between GMT_ASCII_GS characters since there may be spaces in them */
-				if (no_frame)	/* Default filler since we dont want any frames */
+				if (no_frame)	/* Default filler since we don't want any frames */
 					fprintf (fp, "\t%c+n%c%c%c%c%c\n", GMT_ASCII_GS, GMT_ASCII_GS, GMT_ASCII_GS, GMT_ASCII_GS, GMT_ASCII_GS, GMT_ASCII_GS);	/* Pass -B+n only */
 				else {
 					fprintf (fp, "\t%c%s%s", GMT_ASCII_GS, Bx[col], By[row]);	/* These are the axes to draw/annotate for this subplot */

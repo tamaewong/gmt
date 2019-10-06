@@ -1148,7 +1148,7 @@ int GMT_movie (void *V_API, int mode, void *args) {
 			else if (!strstr (line, "#!/"))	 {	/* Skip any leading shell incantation since already placed by set_script */
 				if (strchr (line, '\n') == NULL) strcat (line, "\n");	/* In case the last line misses a newline */
 				if (is_gmtendshow (line))
-					fprintf (fp, "gmt end\n");	/* Dont write the show word */
+					fprintf (fp, "gmt end\n");	/* Don't write the show word */
 				else
 					fprintf (fp, "%s", line);	/* Just copy the line as is */
 			}
@@ -1259,7 +1259,7 @@ int GMT_movie (void *V_API, int mode, void *args) {
 			else if (!strstr (line, "#!/"))	{	/* Skip any leading shell incantation since already placed */
 				if (strchr (line, '\n') == NULL) strcat (line, "\n");	/* In case the last line misses a newline */
 				if (is_gmtendshow (line))
-					fprintf (fp, "gmt end\n");	/* Dont write the show word */
+					fprintf (fp, "gmt end\n");	/* Don't write the show word */
 				else
 					fprintf (fp, "%s", line);	/* Just copy the line as is */
 			}
@@ -1497,7 +1497,7 @@ int GMT_movie (void *V_API, int mode, void *args) {
 			else if (!strstr (line, "#!/"))	{	/* Skip any leading shell incantation since already placed */
 				if (strchr (line, '\n') == NULL) strcat (line, "\n");	/* In case the last line misses a newline */
 				if (is_gmtendshow (line))
-					fprintf (fp, "gmt end\n");	/* Dont write the show word */
+					fprintf (fp, "gmt end\n");	/* Don't write the show word */
 				else
 					fprintf (fp, "%s", line);	/* Just copy the line as is */
 			}
@@ -1605,7 +1605,7 @@ int GMT_movie (void *V_API, int mode, void *args) {
 		else if (!strstr (line, "#!/")) {		/* Skip any leading shell incantation since already placed */
 			if (strchr (line, '\n') == NULL) strcat (line, "\n");	/* In case the last line misses a newline */
 			if (is_gmtendshow (line))
-				fprintf (fp, "gmt end\n");	/* Dont write the show word */
+				fprintf (fp, "gmt end\n");	/* Don't write the show word */
 			else
 				fprintf (fp, "%s", line);	/* Just copy the line as is */
 		}

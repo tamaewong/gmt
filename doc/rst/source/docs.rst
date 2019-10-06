@@ -28,7 +28,7 @@ Required Arguments
 ------------------
 
 *module-name*
-    One of teh core or supplemental modules,
+    One of the core or supplemental modules,
     or one of api, cookbook, gallery, defaults, and tutorial.
 
 Optional Arguments
