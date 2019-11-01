@@ -1,6 +1,6 @@
 #
 #
-# Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
-# Contact info: gmt.soest.hawaii.edu
+# Contact info: www.generic-mapping-tools.org
 #-------------------------------------------------------------------------------
 
 include (GmtHelperMacros)
@@ -61,4 +61,5 @@ install (DIRECTORY examples
 	USE_SOURCE_PERMISSIONS
 	PATTERN "${_exclude_bat}" EXCLUDE
 	PATTERN "CMakeLists.txt" EXCLUDE
+	PATTERN "gmt.history" EXCLUDE
 	REGEX "[.](cmake|in|ps)$" EXCLUDE)

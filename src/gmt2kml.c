@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*void *V_API, int mode
  * API functions to support the gmt2kml application.
@@ -28,9 +28,10 @@
 #include "gmt_dev.h"
 #include <stdarg.h>
 
-#define THIS_MODULE_NAME	"gmt2kml"
+#define THIS_MODULE_CLASSIC_NAME	"gmt2kml"
+#define THIS_MODULE_MODERN_NAME	"gmt2kml"
 #define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Convert GMT data tables to KML files for Google Earth"
+#define THIS_MODULE_PURPOSE	"Convert GMT data table to Google Earth KML file"
 #define THIS_MODULE_KEYS	"<D{,>D},CC("
 #define THIS_MODULE_NEEDS	""
 #define THIS_MODULE_OPTIONS "-:>KOVabdefghi" GMT_OPT("HMm")
@@ -200,7 +201,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GMT2KML_CTRL *C) {	/* Dea
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the gmt2kml synopsis and optionally full usage information */
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<table>] [-Aa|g|s[<altitude>|x<scale>]] [-C<cpt>] [-D<descriptfile>] [-E[+e][+s]]\n", name);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Fe|s|t|l|p|w] [-G[<color>][+f|n]] [-I<icon>] [-K] [-L<name1>,<name2>,...]\n");
@@ -256,7 +257,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally append /<foldername> to name folder when used with\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -O and -K to organize features into groups.\n");
 	GMT_Option (API, "V");
-	gmt_pen_syntax (API->GMT, 'W', "Specify pen attributes for lines and polygon outlines [Default is %s].\n", 8);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Specify pen attributes for lines and polygon outlines [Default is %s].\n", 8);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Give width in pixels and append p.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Control visibility of features.  Append one or more modifiers:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +a<alt_min>/<alt_max> inserts altitude limits [no limit].\n");
@@ -277,7 +278,7 @@ GMT_LOCAL unsigned int parse_old_W (struct GMTAPI_CTRL *API, struct GMT2KML_CTRL
 	if (text[j] == '-') {Ctrl->W.pen.cptmode = 1; j++;}
 	if (text[j] == '+') {Ctrl->W.pen.cptmode = 3; j++;}
 	if (text[j] && gmt_getpen (API->GMT, &text[j], &Ctrl->W.pen)) {
-		gmt_pen_syntax (API->GMT, 'W', "sets pen attributes [Default pen is %s]:", 8);
+		gmt_pen_syntax (API->GMT, 'W', NULL, "sets pen attributes [Default pen is %s]:", 8);
 		n_errors++;
 	}
 	return n_errors;
@@ -415,7 +416,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMT2KML_CTRL *Ctrl, struct GMT
 					GMT_Report (API, GMT_MSG_COMPAT, "Using - for no fill is deprecated, use -G[+f|n] instead\n");
 				}
 				else if (gmt_getfill (GMT, &opt->arg[k], &Ctrl->G.fill[ind])) {
-					gmt_fill_syntax (GMT, 'G', "(-G[<fill>]+f|n)");
+					gmt_fill_syntax (GMT, 'G', NULL, "(-G[<fill>]+f|n)");
 					n_errors++;
 				}
 				if (c) c[0] = '+';	/* Restore */
@@ -443,9 +444,8 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMT2KML_CTRL *Ctrl, struct GMT
 					Ctrl->N.mode = GET_COL_LABEL;
 					Ctrl->N.col = GMT_Z;
 				}
-				else if ((opt->arg[0] == 't' || opt->arg[0] == '+') && opt->arg[0] == '\0') {	/* Trailing text (+ is backwards compatible)  */
+				else if ((opt->arg[0] == 't' || opt->arg[0] == '+') && opt->arg[1] == '\0')	/* Trailing text (+ is backwards compatible)  */
 					Ctrl->N.mode = GET_LABEL;
-				}
 				else if (strchr (opt->arg, '%')) {	/* Want a format */
 					Ctrl->N.fmt = strdup (opt->arg);
 					Ctrl->N.mode = FMT_LABEL;
@@ -512,7 +512,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMT2KML_CTRL *Ctrl, struct GMT
 				}
 				else if (opt->arg[0]) {
 					if (gmt_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
-						gmt_pen_syntax (GMT, 'W', "sets pen attributes [Default pen is %s]:", 11);
+						gmt_pen_syntax (GMT, 'W', NULL, "sets pen attributes [Default pen is %s]:", 11);
 						n_errors++;
 					}
 				}
@@ -856,7 +856,7 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);		/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -1195,7 +1195,7 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 						kml_print (API, Out, N++, "<Placemark>");
 						if (Ctrl->N.mode == NO_LABEL) { /* Nothing */ }
 						else if (Ctrl->N.mode == GET_COL_LABEL) {
-							gmt_ascii_format_one (GMT, item, S->data[Ctrl->N.col][row], Ctrl->N.col);
+							gmt_ascii_format_one (GMT, item, S->data[Ctrl->N.col][row], gmt_M_type(GMT,GMT_IN,Ctrl->N.col));
 							kml_print (API, Out, N, "<name>%s</name>", item);
 						}
 						else if (Ctrl->N.mode == GET_LABEL)
@@ -1220,7 +1220,7 @@ int GMT_gmt2kml (void *V_API, int mode, void *args) {
 								kml_print (API, Out, N, "<Data name = \"%s\">", Ctrl->L.name[col]);
 								kml_print (API, Out, N++, "<value>");
 								if ((n_coord+col) < S->n_columns) {	/* Part of the numerical section */
-									gmt_ascii_format_one (GMT, item, S->data[n_coord+col][row], n_coord+col);
+									gmt_ascii_format_one (GMT, item, S->data[n_coord+col][row], gmt_M_type(GMT,GMT_IN,n_coord+col));
 									kml_print (API, Out, N, "%s", item);
 								}
 								else if (all_text) {	/* Place entire trailing text */

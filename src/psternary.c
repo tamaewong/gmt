@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: psternary reads one or many abc-files and either
@@ -26,7 +26,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"psternary"
+#define THIS_MODULE_CLASSIC_NAME	"psternary"
+#define THIS_MODULE_MODERN_NAME	"ternary"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot data on ternary diagrams"
 #define THIS_MODULE_KEYS	"<D{,>X},>DM,C-(@<D{,MD),C-("
@@ -96,7 +97,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct PSTERNARY_CTRL *C) {	/* D
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the psternary synopsis and optionally full usage information */
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <table> [-B<args> or -Ba<args> -Bb<args> -Bc<args>] [-C<cpt>] [-G<fill>]\n", name);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-JX<width>] %s[-L<a/b/c> ] [-M] [-N] %s%s [-S[<symbol>][<size>[unit]]]\n", API->K_OPT, API->O_OPT, API->P_OPT);
@@ -112,7 +113,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   -Ba<args> -Bb<args> -Bc<args> or a single -B<args> for all axes.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Use CPT to assign symbol colors based on z-value in 3rd column (with -S), or\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   specify contours to be drawn (with -Q).\n");
-	gmt_fill_syntax (API->GMT, 'G', "Specify color or pattern [no fill].");
+	gmt_fill_syntax (API->GMT, 'G', NULL, "Specify color or pattern [no fill].");
 	GMT_Option (API, "J,K");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Give labels for each of the 3 vertices [no labels].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-M Convert (a,b,c) to normalized (x,y) and write to standard output.  No plotting occurs.\n");
@@ -123,7 +124,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Select symbol type and symbol size (in %s).  See psxy for full list of symbols.\n",
 		API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
 	GMT_Option (API, "U,V");
-	gmt_pen_syntax (API->GMT, 'W', "Set pen attributes [Default pen is %s]:", 15);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Set pen attributes [Default pen is %s]:", 15);
 	GMT_Option (API, "X,bi2,c,di,e,f,g,h,i,p,t,:,.");
 	
 	return (GMT_MODULE_USAGE);
@@ -334,7 +335,7 @@ EXTERN_MSC void gmt_set_dataset_minmax (struct GMT_CTRL *GMT, struct GMT_DATASET
 int GMT_ternary (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: ternary\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -373,7 +374,7 @@ int GMT_psternary (void *V_API, int mode, void *args) {
 	
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -472,7 +473,7 @@ int GMT_psternary (void *V_API, int mode, void *args) {
 		PSL_comment (PSL, "Placing plot title\n");
 		PSL_plottext (PSL, tri_x[2], tri_y[2]+2.0*T_off, GMT->current.setting.font_title.size, GMT->current.map.frame.header, 0.0, PSL_BC, form);
 	}
-	if (Ctrl->L.active) {	/* Plot the vertix labels */
+	if (Ctrl->L.active) {	/* Plot the vertex labels */
 		double dx = L_off * cosd (30.0), dy = L_off * sind (30.0);
 		int form = gmt_setfont (GMT, &GMT->current.setting.font_label);
 		PSL_comment (PSL, "Placing vertices labels\n");
@@ -528,7 +529,7 @@ int GMT_psternary (void *V_API, int mode, void *args) {
 		}
 	}
 	if (Ctrl->S.active) {	/* Plot symbols */
-		char vfile[GMT_LEN16] = {""};
+		char vfile[GMT_STR16] = {""};
 		if (GMT_Open_VirtualFile (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN, D, vfile) == GMT_NOTSET) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Unable to create a virtual data set\n");
 			Return (API->error);

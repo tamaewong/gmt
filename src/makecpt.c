@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  *
@@ -23,16 +23,17 @@
  * Brief synopsis: Reads an existing CPT and desired output grid
  * and produces a GMT CPT.  Can be inverted [-I] or made to be
  * continuous [-Z].  Discrete color jumps in CPTs are handled
- * correctly.  Default color table is rainbow.
+ * correctly.  Default color table is GMT_DEFAULT_CPT_NAME.
  *
  */
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"makecpt"
+#define THIS_MODULE_CLASSIC_NAME	"makecpt"
+#define THIS_MODULE_MODERN_NAME	"makecpt"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Make GMT color palette tables"
-#define THIS_MODULE_KEYS	">C},ED(,SD(,TD(,<D(,H->"
+#define THIS_MODULE_KEYS	">C},ED(,SD(,TD(,<D("
 #define THIS_MODULE_NEEDS	""
 #define THIS_MODULE_OPTIONS	"->Vbdhi"
 
@@ -136,7 +137,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MAKECPT_CTRL *C) {	/* Dea
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	const char *H_OPT = (API->GMT->current.setting.run_mode == GMT_MODERN) ? " [-H]" : "";
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [-A<transparency>[+a]] [-C<cpt>|colors] [-D[i|o]] [-E<nlevels>] [-F[R|r|h|c][+c]] [-G<zlo>/<zhi>]%s\n", name, H_OPT);
@@ -395,7 +396,7 @@ int GMT_makecpt (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -587,7 +588,7 @@ int GMT_makecpt (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 
-	gmt_save_current_cpt (GMT, Pout);	/* Save for use by session, if modern */
+	if (!write) gmt_save_current_cpt (GMT, Pout);	/* Save for use by session, if modern */
 
 	Return (GMT_NOERROR);
 }

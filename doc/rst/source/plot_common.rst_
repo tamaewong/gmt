@@ -184,11 +184,18 @@ Optional Arguments
     use **+vb** and **+ve** to specify separate vector specs at each end [shared specs].
     Because **+v** may take additional modifiers it must necessarily be given
     at the end of the pen specification.
-    See the :ref:`Vec_attributes` for more information.
+    See the `Vector Attributes`_ for more information.
 
 .. _-X:
 
 .. include:: explain_-XY.rst_
+
+.. _-Z:
+
+**-Z**\ [**l**\ \|\ **f**]\ *value*
+    Instead of specifying a symbol or polygon fill and outline color via **-G** and **-W**,
+    give both a *level* value via **-Z** and a color lookup table via **-C**.  To just set the
+    fill or outline, use **-Zf** or **-Zl**, respectively.
 
 .. |Add_-bi| replace:: [Default is the required number of columns given the chosen settings].
 .. include:: explain_-bi.rst_
@@ -212,6 +219,9 @@ Optional Arguments
 
 .. include:: explain_-icols.rst_
 
+.. |Add_-l| unicode:: 0x20 .. just an invisible code
+.. include:: explain_-l.rst_
+
 .. include:: explain_colon.rst_
 
 .. |Add_perspective| unicode:: 0x20 .. just an invisible code
@@ -223,7 +233,5 @@ If no transparency is appended then we will read it from the last column per dat
 .. include:: explain_help.rst_
 
 .. include:: explain_distunits.rst_
-
-.. _Vec_attributes:
 
 .. include:: explain_vectors.rst_

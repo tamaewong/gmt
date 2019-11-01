@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * API functions to support the gmtconvert application.
@@ -29,7 +29,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"gmtconvert"
+#define THIS_MODULE_CLASSIC_NAME	"gmtconvert"
+#define THIS_MODULE_MODERN_NAME	"gmtconvert"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Convert, paste, or extract columns from data tables"
 #define THIS_MODULE_KEYS	"<D{,>D}"
@@ -127,10 +128,10 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *C) {	/* 
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<table>] [-A] [-C[+l<min>][+u<max>][+i]] [-D[<template>[+o<orig>]]] [-E[f|l|m|M<stride>]] [-F<arg>] [-I[tsr]]\n", name);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-N<col>[+a|d]] [-Q[~]<selection>] [-S[~]\"search string\"] [-T[hd]] [%s] [-W[+n]] [-Z[<first>][:<last>]] [%s]\n\t[%s] [%s] [%s] [%s] [%s]\n", GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-L] [-N<col>[+a|d]] [-Q[~]<selection>] [-S[~]\"search string\"] [-T[hd]] [%s] [-W[+n]] [-Z[<first>][/<last>]] [%s]\n\t[%s] [%s] [%s] [%s] [%s]\n", GMT_V_OPT, GMT_a_OPT, GMT_b_OPT, GMT_d_OPT, GMT_e_OPT, GMT_f_OPT, GMT_g_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n\n", GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_s_OPT, GMT_colon_OPT, GMT_PAR_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
@@ -339,14 +340,15 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMTCONVERT_CTRL *Ctrl, struct 
 				break;
 			case 'Z':
 				Ctrl->Z.active = true;
-				if ((c = strchr (opt->arg, ':'))) {	/* Got [<first>]:[<last>] */
-					if (opt->arg[0] == ':') /* No first given, default to 0 */
+				if ((c = strchr (opt->arg, ':')) || (c = strchr (opt->arg, '/'))) {	/* Got [<first>]:[<last>] or [<first>]/[<last>] */
+					char div = c[0];	/* Either : or / */
+					if (opt->arg[0] == div) /* No first given, default to 0 */
 						Ctrl->Z.last = atol (&opt->arg[1]);
 					else { /* Gave first, and maybe last */
 						c[0] = '\0';	/* Chop off last */
 						Ctrl->Z.first = atol (opt->arg);
 						Ctrl->Z.last = (c[1]) ? (int64_t)atol (&c[1]) : INTMAX_MAX;	/* Last record if not given */
-						c[0] = ':';	/* Restore */
+						c[0] = div;	/* Restore */
 					}
 				}
 				else /* No colon means first is 0 and given value is last */
@@ -457,7 +459,7 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -588,7 +590,7 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Parsing requires files with same number of records.\n");
 		Return (GMT_RUNTIME_ERROR);
 	}
-	if (n_cols_out == 0) {
+	if (n_cols_out == 0 && !GMT->current.io.trailing_text[GMT_OUT]) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Selection led to no output columns.\n");
 		Return (GMT_RUNTIME_ERROR);
 
@@ -656,7 +658,7 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 				/* Pull out current virtual row (may consist of a single or many (-A) table rows) */
 				for (tbl_hor = out_col = tlen = 0; tbl_hor < n_horizontal_tbls; tbl_hor++) {	/* Number of tables to place horizontally */
 					use_tbl = (Ctrl->A.active) ? tbl_hor : tbl_ver;
-					if (D[GMT_IN]->table[use_tbl]->segment[seg]->text) tlen += strlen (D[GMT_IN]->table[use_tbl]->segment[seg]->text[row]) + 1;	/* String + separator */
+					if (D[GMT_IN]->table[use_tbl]->segment[seg]->text && D[GMT_IN]->table[use_tbl]->segment[seg]->text[row]) tlen += strlen (D[GMT_IN]->table[use_tbl]->segment[seg]->text[row]) + 1;	/* String + separator */
 					for (col = 0; col < D[GMT_IN]->table[use_tbl]->segment[seg]->n_columns; col++, out_col++) {	/* Now go across all columns in current table */
 						val[out_col] = D[GMT_IN]->table[use_tbl]->segment[seg]->data[col][row];
 					}
@@ -671,7 +673,7 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 					for (tbl_hor = 0; tbl_hor < n_horizontal_tbls; tbl_hor++) {	/* Number of tables to place horizontally */
 						use_tbl = (Ctrl->A.active) ? tbl_hor : tbl_ver;
 						if (use_tbl) strcat (D[GMT_OUT]->table[tbl_ver]->segment[seg]->text[n_rows], GMT->current.setting.io_col_separator);
-						strcat (D[GMT_OUT]->table[tbl_ver]->segment[seg]->text[n_rows], D[GMT_IN]->table[use_tbl]->segment[seg]->text[row]);
+						if (D[GMT_IN]->table[use_tbl]->segment[seg]->text[row]) strcat (D[GMT_OUT]->table[tbl_ver]->segment[seg]->text[n_rows], D[GMT_IN]->table[use_tbl]->segment[seg]->text[row]);
 					}
 				}
 				n_rows++;
@@ -759,10 +761,13 @@ int GMT_gmtconvert (void *V_API, int mode, void *args) {
 		struct GMT_ORDER *Z = NULL;
 		uint64_t max_len = 0;
 		bool do_it = true;
+		char *way[3] = {"descending", "", "ascending"};
 		if (Ctrl->N.col >= D[GMT_OUT]->n_columns) {
 			GMT_Report (API, GMT_MSG_VERBOSE, "Column selected (%d) as sorting key is outside range of valid columns [0-%d].  No sorting performed\n", (int)Ctrl->N.col, (int)(D[GMT_OUT]->n_columns - 1));
 			do_it = false;
 		}
+		else
+			GMT_Report (API, GMT_MSG_VERBOSE, "Sort data based on column %d in %s order\n", (int)Ctrl->N.col, way[Ctrl->N.dir+1]);
 		GMT->current.io.record_type[GMT_OUT] = GMT->current.io.record_type[GMT_IN];
 		for (tbl = 0; do_it && tbl < D[GMT_OUT]->n_tables; tbl++) {	/* Number of output tables */
 			for (seg = 0; seg < D[GMT_OUT]->table[tbl]->n_segments; seg++) {	/* For each segment in the tables */

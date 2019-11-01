@@ -1,12 +1,11 @@
 .. index:: ! splitxyz
+.. include:: module_core_purpose.rst_
 
 ********
 splitxyz
 ********
 
-.. only:: not man
-
-    Split xyz[dh] data tables into individual segments
+|splitxyz_purpose|
 
 Synopsis
 --------
@@ -180,6 +179,10 @@ in same units as x,y and angles are counter-clockwise from horizontal.
 
 Examples
 --------
+
+.. include:: explain_example.rst_
+
+.. include:: oneliner_info.rst_
 
 Suppose you want to make a wiggle plot of magnetic anomalies on segments
 oriented approximately east-west from a NGDC-supplied cruise called JA020015 in the

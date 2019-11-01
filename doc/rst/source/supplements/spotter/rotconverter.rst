@@ -1,20 +1,19 @@
 .. index:: ! rotconverter
+.. include:: ../module_supplements_purpose.rst_
 
 **************
 rotconverter
 **************
 
-.. only:: not man
-
-    rotconverter - Manipulate total reconstruction and stage rotations
+|rotconverter_purpose|
 
 Synopsis
 --------
 
 .. include:: ../../common_SYN_OPTs.rst_
 
-**gmt rotconverter** [ **+**\ \|\ **-** ] *rotA* [ **+**\ \|\ **-** *rotB* ]
-[ **+**\ \|\ **-** *rotC* ] ... [ |-A| ] [ |-D| ]
+**gmt rotconverter** [ **±** ] *rotA* [ **±** *rotB* ] [ **±** *rotC* ] ...
+[ |-A| ] [ |-D| ]
 [ |-F|\ *out* ]
 [ |-G| ]
 [ |-M|\ [*fact*] ]

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 
 /* NOTE: This is a new version for dual Antarctica polygons.
@@ -243,7 +243,7 @@ GMT_LOCAL char *shore_getpathname (struct GMT_CTRL *GMT, char *stem, char *path,
 	 * and returns path if file is readable, NULL otherwise */
 
 	FILE *fp = NULL;
-	char dir[GMT_BUFSIZ];
+	char dir[PATH_MAX];
 	static struct GSHHG_VERSION version = GSHHG_MIN_REQUIRED_VERSION;
 	static bool warn_once = true;
 	bool found = false;
@@ -291,7 +291,7 @@ GMT_LOCAL char *shore_getpathname (struct GMT_CTRL *GMT, char *stem, char *path,
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "2. GSHHG: Failed to open %s\n", path);
 				return (NULL);
 			}
-			while (fgets (dir, GMT_BUFSIZ, fp)) {	/* Loop over all input lines until found or done */
+			while (fgets (dir, PATH_MAX, fp)) {	/* Loop over all input lines until found or done */
 				if (dir[0] == '#' || dir[0] == '\n') continue;	/* Comment or blank */
 				gmt_chop (dir);		/* Chop off LF or CR/LF */
 				sprintf (path, "%s/%s%s", dir, stem, ".nc");
@@ -335,7 +335,7 @@ L1:
 		if ( access (path, R_OK) == 0) {	/* File can be read */
 			if ( gshhg_require_min_version (path, version) ) {
 				/* update invalid GMT->session.GSHHGDIR */
-				sprintf (dir, "%s/%s", GMT->session.SHAREDIR, "coast");
+				snprintf (dir, PATH_MAX, "%s/%s", GMT->session.SHAREDIR, "coast");
 				gmt_M_str_free (GMT->session.GSHHGDIR);
 				GMT->session.GSHHGDIR = strdup (dir);
 				GMT_Report (GMT->parent, GMT_MSG_DEBUG, "3. GSHHG: OK, could access %s\n", path);
@@ -366,7 +366,7 @@ GMT_LOCAL void shore_check (struct GMT_CTRL *GMT, bool ok[5]) {
  * resolution (f, h, i, l, c) */
 
 	int i, j, n_found;
-	char stem[GMT_LEN64] = {""}, path[GMT_BUFSIZ] = {""}, *res = "clihf", *kind[3] = {"GSHHS", "river", "border"};
+	char stem[GMT_LEN64] = {""}, path[PATH_MAX] = {""}, *res = "clihf", *kind[3] = {"GSHHS", "river", "border"};
 
 	for (i = 0; i < 5; i++) {
 		/* For each resolution... */
@@ -530,7 +530,7 @@ int gmt_init_shore (struct GMT_CTRL *GMT, char res, struct GMT_SHORE *c, double 
 	short *stmp = NULL;
 	int *itmp = NULL;
 	size_t start[1], count[1];
-	char stem[GMT_LEN64] = {""}, path[GMT_BUFSIZ] = {""};
+	char stem[GMT_LEN64] = {""}, path[PATH_MAX] = {""};
 
 	snprintf (stem, GMT_LEN64, "binned_GSHHS_%c", res);
 
@@ -741,6 +741,7 @@ int gmt_get_shore_bin (struct GMT_CTRL *GMT, unsigned int b, struct GMT_SHORE *c
 	size_t start[1], count[1];
 	int *seg_info = NULL, *seg_start = NULL, *seg_ID = NULL;
 	int s, i, k, ny, err, level, inc[4], ll_node, node, ID, *seg_skip = NULL;
+	bool may_shrink = false;
 	unsigned short corner[4], bitshift[4] = {9, 6, 3, 0};
 	signed char *seg_info_ANT = NULL;
 	double w, e, dx;
@@ -769,7 +770,22 @@ int gmt_get_shore_bin (struct GMT_CTRL *GMT, unsigned int b, struct GMT_SHORE *c
 	ll_node = ((c->bins[b] / c->bin_nx) + 1) * (c->bin_nx + 1) + (c->bins[b] % c->bin_nx);		/* lower-left node in current bin */
 	inc[0] = 0;	inc[1] = 1;	inc[2] = 1 - (c->bin_nx + 1);	inc[3] = -(c->bin_nx + 1);	/* Relative incs to other nodes */
 
+	/* Trying to address issue https://github.com/GenericMappingTools/gmt/issues/1295.
+	 * It only happens for very large -A values, such as -A8000.  I am trying a fix where
+	 * we check if Antarctica with no polygons (i.e., just a tile) and large -A.
+	 * It may have side effects to we keep that issue open for now.
+	 */
+	
 	if (c->min_area > 0.0) {	/* May have to revise the node_level array if the polygon that determined the level is to be skipped */
+		may_shrink = true;	/* Most likely, but check for Antarctica */
+		for (k = 0; k < 4; k++) {	/* Visit all four nodes defining this bin, going counter-clockwise from lower-left bin */
+			node = ll_node + inc[k];	/* Current node index */
+			ID = c->GSHHS_node[node];	/* GSHHS Id of the polygon that determined the level of the current node */
+			if ((ID == GSHHS_ANTARCTICA_ICE_ID || ID == GSHHS_ANTARCTICA_GROUND_ID) && c->ns == 0 && c->min_area > 5000.0) may_shrink = false;
+		}
+	}
+	
+	if (c->min_area > 0.0 && may_shrink) {	/* May have to revise the node_level array if the polygon that determined the level is to be skipped */
 		for (k = 0; k < 4; k++) {	/* Visit all four nodes defining this bin, going counter-clockwise from lower-left bin */
 			node = ll_node + inc[k];	/* Current node index */
 			ID = c->GSHHS_node[node];	/* GSHHS Id of the polygon that determined the level of the current node */
@@ -821,7 +837,7 @@ int gmt_get_shore_bin (struct GMT_CTRL *GMT, unsigned int b, struct GMT_SHORE *c
 	for (i = 0; i < c->bin_nseg[b]; i++) {
 		seg_skip[i] = true;	/* Reset later to false if we pass all the tests to follow next */
 		if (c->GSHHS_area_fraction[seg_ID[i]] < c->fraction) continue;	/* Area of this feature is too small relative to its original size */
-		if (fabs (c->GSHHS_area[seg_ID[i]]) < c->min_area) continue;	/* Too small. NOTE: Use fabs() since double-lined-river lakes have negative area */
+		if (may_shrink && fabs (c->GSHHS_area[seg_ID[i]]) < c->min_area) continue;	/* Too small. NOTE: Use fabs() since double-lined-river lakes have negative area */
 		level = get_level (seg_info[i]);
 		if (c->two_Antarcticas) {	/* Can apply any -A+ag|i check based on Antarctica source. Note if -A+as was used we may have already skipped this bin but it depends on resolution chosen */
 			if (seg_info_ANT[i]) level = ANT_LEVEL_ICE;	/* Replace the 1 with 5 so Ant polygons now have levels 5 (ice) or 6 (ground) */
@@ -928,7 +944,7 @@ int gmt_init_br (struct GMT_CTRL *GMT, char which, char res, struct GMT_BR *c, d
 	short *stmp = NULL;
 	int *itmp = NULL;
 	size_t start[1], count[1];
-	char stem[GMT_LEN64] = {""}, path[GMT_BUFSIZ] = {""};
+	char stem[GMT_LEN64] = {""}, path[PATH_MAX] = {""};
 
 	/* zap structure (nc_get_att_text does not null-terminate strings!) */
 	gmt_M_memset (c, 1, struct GMT_BR);

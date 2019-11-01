@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: gmtlogo plots a GMT logo on a map.
@@ -24,9 +24,10 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"gmtlogo"
+#define THIS_MODULE_CLASSIC_NAME	"gmtlogo"
+#define THIS_MODULE_MODERN_NAME	"gmtlogo"
 #define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Plot the GMT logo on maps"
+#define THIS_MODULE_PURPOSE	"Plot the GMT logo"
 #define THIS_MODULE_KEYS	">X}"
 #define THIS_MODULE_NEEDS	"jr"
 #define THIS_MODULE_OPTIONS "->KJOPRUVXYtxy" GMT_OPT("c")
@@ -198,7 +199,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GMTLOGO_CTRL *C) {	/* Dea
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the gmtlogo synopsis and optionally full usage information */
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [-D%s[+w<width>]%s]\n", name, GMT_XYANCHOR, GMT_OFFSET);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F%s]\n\t[%s] %s%s%s[%s]\n", GMT_PANEL, GMT_J_OPT, API->K_OPT, API->O_OPT, API->P_OPT, GMT_Rgeoz_OPT);
@@ -313,7 +314,7 @@ int GMT_gmtlogo (void *V_API, int mode, void *args) {
 	double wesn[4] = {0.0, 0.0, 0.0, 0.0};	/* Dimensions in inches */
 	double scale, y, dim[2];
 
-	char cmd[GMT_LEN256] = {""}, pars[GMT_LEN128] = {""}, file[GMT_BUFSIZ] = {""};
+	char cmd[GMT_LEN256] = {""}, pars[GMT_LEN128] = {""}, file[GMT_STR16] = {""};
 
 	struct GMT_FONT F;
 	struct GMT_MATRIX *M = NULL;
@@ -333,7 +334,7 @@ int GMT_gmtlogo (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -367,6 +368,7 @@ int GMT_gmtlogo (void *V_API, int mode, void *args) {
 		gmt_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
 		GMT->common.J.active = false;
 		gmt_parse_common_options (GMT, "J", 'J', "X1i");
+		wesn[XLO] = Ctrl->D.refpoint->x;	wesn[YLO] = Ctrl->D.refpoint->y;
 		wesn[XHI] = Ctrl->D.refpoint->x + Ctrl->D.width;	wesn[YHI] = Ctrl->D.refpoint->y + 0.5 * Ctrl->D.width;
 		GMT->common.R.active[RSET] = GMT->common.J.active = true;
 		if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, wesn), "")) Return (GMT_PROJECTION_ERROR);

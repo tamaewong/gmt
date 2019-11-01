@@ -38,7 +38,7 @@ Optional Arguments
 
 .. _-A:
 
-**-A**\ [**-**\ \|\*contours*][*labelinfo*]
+**-A**\ [**-**\ \|\ *contours*][*labelinfo*]
     *contours* is annotation interval in data units; it is ignored if
     contour levels are given in a file vua **-C**. [Default is no annotations]. Prepend
     **-** to disable all annotations implied by **-C**. To just select a few specific
@@ -130,7 +130,7 @@ Optional Arguments
 **-Q**\ [*cut*\ [*unit*]][\ **+z**]
     Do not draw contours with less than *cut* number of points [Draw all contours].
     Alternatively, give instead a minimum contour length in distance units
-    (see :ref:`Unit_attributes` for available units and how distances are computed),
+    (see `Units`_ for available units and how distances are computed),
     including **c** (Cartesian distances using user coordinates) or **C** for plot
     length units in current plot units after projecting the coordinates.
     Optionally, append **z** to exclude the zero contour.

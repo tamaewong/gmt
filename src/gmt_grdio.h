@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 
 /*
@@ -45,12 +45,16 @@
 enum GMT_enum_img {
 	GMT_IMG_NLON_1M    = 21600U, /* At 1 min resolution */
 	GMT_IMG_NLON_2M    = 10800U, /* At 2 min resolution */
+	GMT_IMG_NLON_4M    =  5400U, /* At 4 min resolution */
 	GMT_IMG_NLAT_1M_72 = 12672U, /* At 1 min resolution */
 	GMT_IMG_NLAT_2M_72 = 6336U,  /* At 2 min resolution */
+	GMT_IMG_NLAT_4M_72 = 3168U,	 /* At 4 min resolution */
 	GMT_IMG_NLAT_1M_80 = 17280U, /* At 1 min resolution */
 	GMT_IMG_NLAT_2M_80 = 8640U,  /* At 2 min resolution */
+	GMT_IMG_NLAT_4M_80 = 4320U,	 /* At 4 min resolution */
 	GMT_IMG_NLAT_1M_85 = 21600U, /* At 1 min resolution */
 	GMT_IMG_NLAT_2M_85 = 10800U, /* At 2 min resolution */
+	GMT_IMG_NLAT_4M_85 = 5400U,  /* At 4 min resolution */
 	GMT_IMG_ITEMSIZE   = 2U      /* Size of 2 byte short ints */
 };
 #ifdef DOUBLE_PRECISION_GRID

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * common_string.c contains code shared between GMT and PSL
@@ -231,19 +231,17 @@ unsigned int gmt_get_modifier (const char *string, char modifier, char *token) {
 	if (!string || string[0] == 0) return 0;	/* No hope */
 	len = strlen (string);
 	for (k = 0; start == 0 && k < (len-1); k++) {
-		if (string[k] == '\"') quoted = !quoted;	/* Initially false, becomes true at start of quote, then false when exit quote */
+		if (string[k] == '\"' || string[k] == '\'') quoted = !quoted;	/* Initially false, becomes true at start of quote, then false when exit quote */
 		if (quoted) continue;		/* Not look inside quoted strings */
 		if (string[k] == '+' && string[k+1] == modifier)	/* Found the start */
 			start = k+2;
 	}
 	if (start == 0) return 0;	/* Not found */
-	k = start;
-	while (k < len) {
-		if (string[k] == '\"') quoted = !quoted;	/* Initially false, becomes true at start of quote, then false when exit quote */
+	for (k = start; k < len; k++) {
+		if (string[k] == '\"' || string[k] == '\'') quoted = !quoted;	/* Initially false, becomes true at start of quote, then false when exit quote */
 		if (quoted) continue;	/* Not look inside quoted strings */
 		if (string[k] == '+')	/* Found the end */
 			break;
-		k++;
 	}
 	len = k - start;
 	if (token) {	/* Only pass back when token is not NULL */

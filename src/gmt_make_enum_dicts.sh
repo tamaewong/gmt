@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #
 #
-# Copyright (c) 2012-2019
-# by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 2012-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This script just makes the include snippet gmt_enum_dict.h
@@ -14,13 +13,13 @@ grep GMT_OPT_ /tmp/junk1.txt | awk '{print $1, substr($2,1,2)} '> /tmp/junk3.txt
 while read key value; do
 	printf "%s %d\n" $key "$value" >> /tmp/junk2.txt
 done < /tmp/junk3.txt
-n=`gmt info -Fd -o2 /tmp/junk2.txt`
+n=`wc -l < /tmp/junk2.txt | awk '{printf "%d\n", $1}'`
 COPY_YEAR=$(date +%Y)
 NOW=$(date +%d-%B-%Y)
 cat << EOF > gmt_enum_dict.h
 /*--------------------------------------------------------------------
  *
- *      Copyright (c) 1991-$COPY_YEAR by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *      Copyright (c) 1991-$COPY_YEAR by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -32,7 +31,7 @@ cat << EOF > gmt_enum_dict.h
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU Lesser General Public License for more details.
  *
- *      Contact info: gmt.soest.hawaii.edu
+ *      Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 
 /*

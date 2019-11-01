@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: pswiggle reads x,y,z from GMT->session.std[GMT_IN] and plots a wiggleplot using the
@@ -32,7 +32,8 @@
  
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"pswiggle"
+#define THIS_MODULE_CLASSIC_NAME	"pswiggle"
+#define THIS_MODULE_MODERN_NAME	"wiggle"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot z = f(x,y) anomalies along tracks"
 #define THIS_MODULE_KEYS	"<D{,>X}"
@@ -217,7 +218,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 
 	/* This displays the pswiggle synopsis and optionally full usage information */
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<table>] %s %s -Z<scale>[<unit>]\n", name, GMT_J_OPT, GMT_Rgeoz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-A[<azimuth>]] [%s] [-C<center>] [-D[g|j|J|n|x]<refpoint>+w<length>[+a][+j<justify>][+o<dx>[/<dy>]][+l<label>]]\n", GMT_B_OPT, GMT_Jz_OPT);
@@ -242,7 +243,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use +a to move label to the opposite side of vertical scale bar.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Use +l to set the unit label of the z-values for the scale bar label [no label].\n");
 	gmt_mappanel_syntax (API->GMT, 'F', "Specify a rectangular panel behind the vertical scale.", 4);
-	gmt_fill_syntax (API->GMT, 'G', "Specify color/pattern for positive and/or negative areas.");
+	gmt_fill_syntax (API->GMT, 'G', NULL, "Specify color/pattern for positive and/or negative areas.");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append +p to fill positive areas only (Default).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append +n to fill negative areas only.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append both to fill positive and negative areas.\n");
@@ -253,7 +254,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Option (API, "O,P");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Specify track pen attributes. [Default is no track].\n");
 	GMT_Option (API, "U,V");
-	gmt_pen_syntax (API->GMT, 'W', "Specify outline pen attributes [Default is no outline].", 0);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Specify outline pen attributes [Default is no outline].", 0);
 	GMT_Option (API, "X");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z Give the wiggle scale in data-units per %s.\n",
 		API->GMT->session.unit_name[API->GMT->current.setting.proj_length_unit]);
@@ -328,14 +329,14 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSWIGGLE_CTRL *Ctrl, struct GM
 					pp = 0;	txt_a[0] = 0;
 					while (gmt_getmodopt (GMT, 'G', c, "np", &pp, txt_a, &n_errors) && n_errors == 0) {
 						switch (txt_a[0]) {
-							case 'n': pos = true;	break;	/* Negative fill */
-							case 'p': neg = true;	break;	/* Positive fill */
+							case 'n': neg = true;	break;	/* Negative fill */
+							case 'p': pos = true;	break;	/* Positive fill */
 							default: break;	/* These are caught in gmt_getmodopt so break is just for Coverity */
 						}
 					}
 					c[0] = '\0';	/* Chop off all modifiers */
 				}
-				else if (gmt_M_compat_check (GMT, 5)) {	/* Allow old syntax -G+|-|=<fill> */
+				else if (strchr ("-+=", opt->arg[0])) {	/* Allow old syntax -G+|-|=<fill> */
 					switch (opt->arg[0]) {
 						case '=': j = 1, pos = neg = true; break;
 						case '+': j = 1, pos = true; 	   break;
@@ -347,7 +348,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSWIGGLE_CTRL *Ctrl, struct GM
 				k = (pos) ? PSWIGGLE_POS : PSWIGGLE_NEG;
 				Ctrl->G.active[k] = true;
 				if (gmt_getfill (GMT, &opt->arg[j], &Ctrl->G.fill[k])) {
-					gmt_fill_syntax (GMT, 'G', " ");
+					gmt_fill_syntax (GMT, 'G', NULL, " ");
 					n_errors++;
 				}
 				if (c) c[0] = '+';	/* Restore modifiers */
@@ -389,14 +390,14 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSWIGGLE_CTRL *Ctrl, struct GM
 			case 'T':
 				Ctrl->T.active = true;
 				if (gmt_getpen (GMT, opt->arg, &Ctrl->T.pen)) {
-					gmt_pen_syntax (GMT, 'T', " ", 0);
+					gmt_pen_syntax (GMT, 'T', NULL, " ", 0);
 					n_errors++;
 				}
 				break;
 			case 'W':
 				Ctrl->W.active = true;
 				if (gmt_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
-					gmt_pen_syntax (GMT, 'W', " ", 0);
+					gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 					n_errors++;
 				}
 				break;
@@ -441,7 +442,7 @@ GMT_LOCAL void alloc_space (struct GMT_CTRL *GMT, size_t *n_alloc, double **xx, 
 int GMT_wiggle (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: wiggle\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -480,7 +481,7 @@ int GMT_pswiggle (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);

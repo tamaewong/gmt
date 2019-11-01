@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *   Copyright (c) 1999-2019 by P. Wessel
+ *   Copyright (c) 1999-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -11,7 +11,7 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
  *
- *   Contact info: www.soest.hawaii.edu/pwessel
+ *   Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * grdpmodeler will read an age grid file and a plate motion model and
@@ -26,7 +26,8 @@
 #include "gmt_dev.h"
 #include "spotter.h"
 
-#define THIS_MODULE_NAME	"grdpmodeler"
+#define THIS_MODULE_CLASSIC_NAME	"grdpmodeler"
+#define THIS_MODULE_MODERN_NAME	"grdpmodeler"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Evaluate a plate motion model on a geographic grid"
 #define THIS_MODULE_KEYS	"<G{,FD(,GG),>DG"
@@ -97,7 +98,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRDROTATER_CTRL *C) {	/* 
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <agegrdfile> %s [-F<polygontable>] [-G<outgrid>]\n", name, SPOTTER_E_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-N<upper_age>] [-SadrswxyXY]\n\t[-T<time>] [%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n",
@@ -282,7 +283,7 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
@@ -513,7 +514,7 @@ int GMT_grdpmodeler (void *V_API, int mode, void *args) {
 	if (n_NaN) GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " points had ages that were NaN\n", n_NaN);
 	if (Ctrl->G.active) {	/* Need one or more output grids */
 		/* Now write model prediction grid(s) */
-		char file[GMT_BUFSIZ] = {""};
+		char file[PATH_MAX] = {""};
 		for (k = 0; k < Ctrl->S.n_items; k++) {
 			sprintf (file, Ctrl->G.file, tag[Ctrl->S.mode[k]]);
 			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Write model prediction grid for %s (%s) to file %s\n", quantity[Ctrl->S.mode[k]], G_mod[k]->header->z_units, file);

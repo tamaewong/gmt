@@ -1,12 +1,11 @@
 .. index:: ! psevents
+.. include:: module_core_purpose.rst_
 
 ********
 psevents
 ********
 
-.. only:: not man
-
-    Plot event symbols and labels for a moment in time
+|psevents_purpose|
 
 Synopsis
 --------
@@ -48,6 +47,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To show the display of events visible for May 1, 2018 given the catalog of
 large (>5) magnitude earthquakes that year, using a 2-day rise time during

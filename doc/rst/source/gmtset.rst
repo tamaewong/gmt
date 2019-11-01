@@ -1,12 +1,11 @@
 .. index:: ! gmtset
+.. include:: module_core_purpose.rst_
 
-***
-set
-***
+******
+gmtset
+******
 
-.. only:: not man
-
-    Change individual GMT default parameters
+|gmtset_purpose|
 
 Synopsis
 --------
@@ -66,7 +65,7 @@ Optional Arguments
     ~/.gmt and finally in the system defaults].
 
 **-**\ [**BJRXxYycp**]\ *value*
-    Set the expansion of any of these shorthand options. 
+    Set the expansion of any of these shorthand options.
 
 .. include:: explain_help.rst_
 
@@ -74,12 +73,9 @@ Examples
 --------
 
 To change annotation font to 12-point Helvetica, select grid-crosses of
-size 0.1 inch, and set annotation offset to 0.2 cm:
+size 0.1 inch, and set annotation offset to 0.2 cm::
 
-   ::
-
-    gmt set FONT_ANNOT_PRIMARY 12p,Helvetica \
-            MAP_GRID_CROSS_SIZE_PRIMARY 0.1i MAP_ANNOT_OFFSET_PRIMARY 0.2c
+    gmt set FONT_ANNOT_PRIMARY 12p,Helvetica MAP_GRID_CROSS_SIZE_PRIMARY 0.1i MAP_ANNOT_OFFSET_PRIMARY 0.2c
 
 See Also
 --------

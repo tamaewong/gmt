@@ -1,12 +1,11 @@
 .. index:: ! xyz2grd
+.. include:: module_core_purpose.rst_
 
 *******
 xyz2grd
 *******
 
-.. only:: not man
-
-    Convert data table to a grid file
+|xyz2grd_purpose|
 
 Synopsis
 --------
@@ -207,11 +206,13 @@ the double type's 53-bit mantissa.
 Examples
 --------
 
+.. include:: explain_example.rst_
+
 To create a grid file from the ASCII data in hawaii\_grv.xyz, use
 
    ::
 
-    gmt xyz2grd hawaii_grv.xyz -D+xdegree+ydegree+zGal+t"Hawaiian Gravity"+r"GRS-80 Ellipsoid used"
+    gmt xyz2grd hawaii_grv.xyz -D+xdegree+ydegree+zGal+t"Hawaiian Gravity"+r"GRS-80 Ellipsoid used" \
                 -Ghawaii_grv_new.nc -R198/208/18/25 -I5m -V
 
 To create a grid file from the raw binary (3-column, single-precision

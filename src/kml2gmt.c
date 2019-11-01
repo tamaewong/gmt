@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: kml2gmt is a reformatter that takes KML files and extracts GMT tables;
@@ -25,7 +25,8 @@
  
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"kml2gmt"
+#define THIS_MODULE_CLASSIC_NAME	"kml2gmt"
+#define THIS_MODULE_MODERN_NAME	"kml2gmt"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Extract GMT table data from Google Earth KML files"
 #define THIS_MODULE_KEYS	">D}"
@@ -71,7 +72,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct KML2GMT_CTRL *C) {	/* Dea
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<kmlfiles>] [-E] [-Fs|l|p] [%s] [-Z] [%s] [%s]\n\t[%s] [%s] [%s]\n\n",
 		name, GMT_V_OPT, GMT_bo_OPT, GMT_do_OPT, GMT_ho_OPT, GMT_colon_OPT, GMT_PAR_OPT);
@@ -166,9 +167,9 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 	size_t length;
 	bool scan = true, first = true, skip, single = false, extended = false;
 	
-	char line[GMT_BUFSIZ] = {""}, buffer[GMT_BUFSIZ] = {""}, name[GMT_BUFSIZ] = {""};
+	char buffer[GMT_BUFSIZ] = {""}, name[GMT_BUFSIZ] = {""};
 	char word[GMT_LEN128] = {""}, description[GMT_BUFSIZ] = {""};
-	char *gm[3] = {"Point", "Line", "Polygon"};
+	char *gm[3] = {"Point", "Line", "Polygon"}, *line = NULL;
 
 	double out[3], elev;
 	
@@ -190,7 +191,7 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -243,8 +244,9 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 	
 	GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, Out);	/* Write this to output */
 	Out->text = NULL;
+	line = gmt_M_memory (GMT, NULL, GMT_INITIAL_MEM_ROW_ALLOC, char);
 
-	while (fgets (line, GMT_BUFSIZ, fp)) {
+	while (fgets (line, GMT_INITIAL_MEM_ROW_ALLOC, fp)) {
 		if (strstr (line, "<Placemark")) {	/* New Placemark, reset name and description */
 			scan = true;
 			name[0] = description[0] = 0;
@@ -297,9 +299,9 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 		if (Ctrl->E.active && strstr (line, "<ExtendedData>")) {
 			/* https://developers.google.com/kml/documentation/kmlreference#extendeddata
 			   But only a single <SimpleData name="string" is implemented here. */
-			fgets (line, GMT_BUFSIZ, fp);
+			fgets (line, GMT_INITIAL_MEM_ROW_ALLOC, fp);
 			if (strstr (line, "<SchemaData")) {
-				fgets (line, GMT_BUFSIZ, fp);
+				fgets (line, GMT_INITIAL_MEM_ROW_ALLOC, fp);
 				if (strstr (line, "<SimpleData")) {
 					char *p1, *p2;
 					p1 = strchr(line, '>');		p1++;           /* Find end of <SimpleData */
@@ -356,6 +358,7 @@ int GMT_kml2gmt (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 	gmt_M_free (GMT, Out);
+	gmt_M_free (GMT, line);
 	
 	GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Found %u features with selected geometry\n", n_features);
 	

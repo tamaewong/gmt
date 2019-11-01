@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * gmt_defaults.h contains definition of the structure with default settings.
@@ -104,6 +104,7 @@ struct GMT_DEFAULTS {
 	unsigned int history;     /* mode to pass information via history file gmt.history (GMT_HISTORY_OFF, GMT_HISTORY_READ, GMT_HISTORY_WRITE) */
 	unsigned int history_orig;     /* Copy of history */
 	unsigned int export_type;     /* What data type to export to external APIs [GMT_DOUBLE] */
+	unsigned graphics_format;	/* The default graphics format in modern mode [GMT_SESSION_FORMAT] */
 	/* IO group */
 	uint64_t n_bin_header_cols;		/* Minimum number of columns in a binary file for which the all cols == NaN means segment header [2] */
 	unsigned int io_n_header_items;		/* Number of header records expected when -h is used [1]; else 0 */

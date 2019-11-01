@@ -1,19 +1,18 @@
 .. index:: ! psrose
+.. include:: module_core_purpose.rst_
 
 ******
 psrose
 ******
 
-.. only:: not man
-
-    psrose - Plot a polar histogram (rose, sector, windrose diagrams)
+|psrose_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**psrose** [ *table* ] [ |-A|\ *sector_width*\ [**+r**] ]
+**gmt psrose** [ *table* ] [ |-A|\ *sector_width*\ [**+r**] ]
 [ |SYN_OPT-B| ]
 [ |-C|\ **m**\ \|\ [**+w**\ ]\ *mode_file* ]
 [ |-D| ]
@@ -50,6 +49,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To plot a half circle rose diagram of the data in the file
 fault_segments.az_r (containing pairs of (azimuth, length in meters),

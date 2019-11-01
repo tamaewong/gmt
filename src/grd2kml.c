@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Author:	Paul Wessel
@@ -27,7 +27,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"grd2kml"
+#define THIS_MODULE_CLASSIC_NAME	"grd2kml"
+#define THIS_MODULE_MODERN_NAME	"grd2kml"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Create KML image quadtree from single grid"
 #define THIS_MODULE_KEYS	"<G{,CC(,IG("
@@ -134,7 +135,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GRD2KML_CTRL *C) {	/* Dea
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <grid> -N<name> [-C<cpt>] [-E<url>] [-F<filter>] [-H<factor>] [-I[<intensgrid>|<value>|<modifiers>]]\n", name);
 	GMT_Message (API, GMT_TIME_NONE, "	[-L<size>] [-Q] [-T<title>] [%s] [%s] [%s]\n\n", GMT_V_OPT, GMT_f_OPT, GMT_PAR_OPT);
@@ -142,12 +143,12 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
 	GMT_Message (API, GMT_TIME_NONE, "\t<grid> is the data set to be plotted.  Its z-values are in user units and will be\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t  converted to colors via the CPT [rainbow].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t  converted to colors via the CPT [%s].\n", GMT_DEFAULT_CPT_NAME);
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Sets file name prefix for image directory and KML file. If the directory\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   already exist we will overwrite the files.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Color palette file to convert z to rgb. Optionally, instead give name of a master cpt\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   to automatically assign 16 continuous colors over the data range [rainbow].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   to automatically assign 16 continuous colors over the data range [%s].\n", GMT_DEFAULT_CPT_NAME);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Another option is to specify -C<color1>,<color2>[,<color3>,...] to build a\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   linear continuous cpt from those colors automatically.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-E To store all files remotely, give leading URL [local files only].\n");
@@ -159,8 +160,8 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-H Tell psconvert to do sub-pixel smoothing using factor <factor> [no sub-pixel smoothing].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Apply directional illumination. Append name of intensity grid file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   For a constant intensity (i.e., change the ambient light), append a single value.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   To derive intensities from <grid> instead, append +a<azim> [-45] and +n<method> [t1].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Use -I+ to accept the default values (see grdgradient for details).\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   To derive intensities from <grid> instead, append +a<azim> [-45] and +n<method> [t1]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   or use -I+d to accept the default values (see grdgradient for details).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Set tile size as a power of 2 [256].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Use PS Level 3 colormasking to make nodes with z = NaN transparent.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Set title (document description) for the top-level KML.\n");
@@ -235,7 +236,9 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRD2KML_CTRL *Ctrl, struct GMT
 				break;
 			case 'I':	/* Here, intensity must be a grid file since we need to filter it */
 				Ctrl->I.active = true;
-				if ((c = gmt_first_modifier (GMT, opt->arg, "an"))) {	/* Want to control how grdgradient is run */
+				if (!strcmp (opt->arg, "+d"))	/* Gave +d only, so derive intensities from input grid using default settings */
+					Ctrl->I.derive = true;
+				else if ((c = gmt_first_modifier (GMT, opt->arg, "an"))) {	/* Want to control how grdgradient is run */
 					unsigned int pos = 0;
 					char p[GMT_BUFSIZ] = {""};
 					Ctrl->I.derive = true;
@@ -357,7 +360,7 @@ EXTERN_MSC int gmtlib_geo_C_format (struct GMT_CTRL *GMT);
 
 int GMT_grd2kml (void *V_API, int mode, void *args) {
 	int error = 0, kk, uniq, dpi;
-	bool use_tile = false, z_extend = false, i_extend = false;
+	bool use_tile = false, z_extend = false, i_extend = false, tmp_cpt = false;
 	
 	unsigned int level, max_level, n = 0, k, nx, ny, mx, my, row, col, n_skip, quad, n_alloc = GMT_CHUNK, n_bummer = 0;
 
@@ -389,7 +392,7 @@ int GMT_grd2kml (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -409,6 +412,22 @@ int GMT_grd2kml (void *V_API, int mode, void *args) {
 		Return (GMT_RUNTIME_ERROR);
 	}
 
+	if (!Ctrl->C.active) {	/* If no cpt given then we must compute one from the grid and use throughout */
+		unsigned int zmode = gmt_cpt_default (GMT, G->header);
+		char cfile[PATH_MAX] = {""};
+		struct GMT_PALETTE *P = NULL;
+		if ((P = gmt_get_palette (GMT, Ctrl->C.file, GMT_CPT_OPTIONAL, G->header->z_min, G->header->z_max, 0.0, zmode)) == NULL) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Failed to create a CPT\n");
+			Return (API->error);	/* Well, that did not go well... */
+		}
+		sprintf (cfile, "%s/grd2kml_%d.cpt", API->tmp_dir, (int)getpid());
+		if (GMT_Write_Data (API, GMT_IS_PALETTE, GMT_IS_FILE, GMT_IS_NONE, 0, NULL, cfile, P) != GMT_NOERROR) {
+			Return (API->error);
+		}
+		Ctrl->C.active = tmp_cpt = true;
+		Ctrl->C.file = strdup (cfile);
+	}
+	
 	Ctrl->L.size /= Ctrl->M.magnify;
 	dpi = 100 * Ctrl->M.magnify;
 	/* Set specific grdimage option -Q or -Ei or neither */
@@ -707,7 +726,7 @@ int GMT_grd2kml (void *V_API, int mode, void *args) {
 	}
 	fprintf (fp, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n  <kml xmlns=\"http://www.opengis.net/kml/2.2\">\n");
 	fprintf (fp, "    <Document>\n      <name>%s</name>\n", Ctrl->N.prefix);
-	fprintf (fp, "    <!-- Produced by the Generic Mapping Tools [gmt.soest.hawaii.edu] -->\n");
+	fprintf (fp, "    <!-- Produced by the Generic Mapping Tools [www.generic-mapping-tools.org] -->\n");
 	fprintf (fp, "    <!-- cmd: gmt %s %s -->\n", GMT->init.module_name, cmd_args);
 	gmt_M_free (GMT, cmd_args);
 	if (Ctrl->T.active)
@@ -806,5 +825,6 @@ int GMT_grd2kml (void *V_API, int mode, void *args) {
 	}
 	gmt_M_free (GMT, Q);
 	GMT_Report (API, GMT_MSG_VERBOSE, "Done: %d files written to directory %s\n", 2*n+1, Ctrl->N.prefix);
+	if (tmp_cpt) gmt_remove_file (GMT, Ctrl->C.file);
 	Return (GMT_NOERROR);
 }

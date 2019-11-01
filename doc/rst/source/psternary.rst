@@ -1,20 +1,19 @@
 .. index:: ! psternary
+.. include:: module_core_purpose.rst_
 
 *********
 psternary
 *********
 
-.. only:: not man
-
-    psternary - Plot data on ternary diagrams
+|psternary_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**psternary** [ *table* ]
-[ **-JX** \ *width*\ [unit] ]
+**gmt psternary** [ *table* ]
+[ **-JX**\ *width*\ [unit] ]
 [ |SYN_OPT-Rz| ]
 [ |SYN_OPT-B| ]
 [ |-C|\ *cpt* ]
@@ -49,6 +48,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To plot circles (diameter = 0.1 cm) on a 6-inch-wide ternary diagram at the positions listed
 in the file ternary.txt, with default annotations and gridline spacings, using the

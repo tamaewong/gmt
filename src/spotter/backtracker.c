@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *   Copyright (c) 1999-2019 by P. Wessel
+ *   Copyright (c) 1999-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
@@ -11,7 +11,7 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
  *
- *   Contact info: www.soest.hawaii.edu/pwessel
+ *   Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Program for moving points along small circles on a sphere given a
@@ -72,7 +72,8 @@
 #include "gmt_dev.h"
 #include "spotter.h"
 
-#define THIS_MODULE_NAME	"backtracker"
+#define THIS_MODULE_CLASSIC_NAME	"backtracker"
+#define THIS_MODULE_MODERN_NAME	"backtracker"
 #define THIS_MODULE_LIB		"spotter"
 #define THIS_MODULE_PURPOSE	"Generate forward and backward flowlines and hotspot tracks"
 #define THIS_MODULE_KEYS	"<D{,>D},FD("
@@ -156,7 +157,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *C) {	/*
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<table>] %s [-A[<young></old>]] [-Df|b]\n", name, SPOTTER_E_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F<driftfile] [-Lf|b<d_km>] [-M[<factor>]] [-N<upper_age>] [-Q<t_fix>] [-S<stem>] [-T<t_zero>]\n");
@@ -286,13 +287,13 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct BACKTRACKER_CTRL *Ctrl, struct
 				switch (opt->arg[0]) {
 					case 'F':	/* Calculate flowlines */
 						Ctrl->L.stage_id = true;
-						/* Fall through on purpose tp 'f' */
+						/* Fall through on purpose to 'f' */
 					case 'f':
 						Ctrl->L.mode = SPOTTER_FLOWLINE;
 						break;
 					case 'B':	/* Calculate hotspot tracks */
 						Ctrl->L.stage_id = true;
-						/* Fall through on purpose tp 'b' */
+						/* Fall through on purpose to 'b' */
 					case 'b':
 						Ctrl->L.mode = SPOTTER_TRAILLINE;
 						break;
@@ -434,7 +435,7 @@ int GMT_backtracker (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	if ((ptr = GMT_Find_Option (API, 'f', options)) == NULL) gmt_parse_common_options (GMT, "f", 'f', "g"); /* Did not set -f, implicitly set -fg */
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */

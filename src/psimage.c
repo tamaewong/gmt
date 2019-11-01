@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: psimage reads an EPS file or a a 1, 8, 24, or 32 bit image and plots it on the page
@@ -25,9 +25,10 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"psimage"
+#define THIS_MODULE_CLASSIC_NAME	"psimage"
+#define THIS_MODULE_MODERN_NAME	"image"
 #define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Place images or EPS files on maps"
+#define THIS_MODULE_PURPOSE	"Plot raster or EPS images"
 #define THIS_MODULE_KEYS	"<I{,>X}"
 #define THIS_MODULE_NEEDS	"jr"
 #define THIS_MODULE_OPTIONS "->BJKOPRUVXYptxy" GMT_OPT("c")
@@ -89,7 +90,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *C) {	/* Dea
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the psimage synopsis and optionally full usage information */
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <imagefile> [%s] [-D%s+w[-]<width>[/<height>][+n<n_columns>[/<n_rows>]]%s+r<dpi>]\n", name, GMT_B_OPT, GMT_XYANCHOR, GMT_OFFSET);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F%s]\n", GMT_PANEL);
@@ -390,7 +391,7 @@ EXTERN_MSC unsigned char *psl_gray_encode (struct PSL_CTRL *PSL, size_t *nbytes,
 int GMT_image (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: image\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -398,7 +399,7 @@ int GMT_image (void *V_API, int mode, void *args) {
 }
 
 int GMT_psimage (void *V_API, int mode, void *args) {
-	int i, j, PS_interpolate = 1, PS_transparent = 1, is_eps = 0, error = 0;
+	int i, j, PS_interpolate = 1, PS_transparent = 1, is_eps = 0, error = 0, is_gdal = 0;
 	unsigned int row, col;
 	size_t n;
 	bool free_GMT = false, did_gray = false;
@@ -407,7 +408,7 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 
 	unsigned char *picture = NULL, *buffer = NULL;
 
-	char path[GMT_BUFSIZ] = {""}, *file = NULL, *c = NULL;
+	char path[PATH_MAX] = {""}, *file = NULL, *c = NULL;
 
 	struct imageinfo header;
 
@@ -432,7 +433,7 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -442,7 +443,10 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 	PS_interpolate = (Ctrl->D.interpolate) ? -1 : +1;
 
 	file = strdup (Ctrl->In.file);
-	if ((c = strstr (file, "=gd"))) c[0] = '\0';	/* Chop off unnecessary =gd mandate */
+	if ((c = strstr (file, "=gd"))) {
+		is_gdal = true;
+		c[0] = '\0';	/* Chop off unnecessary =gd mandate */
+	}
 	is_eps = file_is_eps (GMT, &file);	/* Determine if this is an EPS file or other */
 	if (is_eps < 0) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Cannot find/open/read file %s\n", file);
@@ -467,6 +471,10 @@ int GMT_psimage (void *V_API, int mode, void *args) {
 #ifdef HAVE_GDAL
 	else  {	/* Read a raster image */
 		GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Processing input raster via GDAL\n");
+		if (is_gdal) {	/* Need full name since there may be band requests */
+			gmt_M_str_free (file);
+			file = strdup (Ctrl->In.file);
+		}
 		gmt_set_pad (GMT, 0U);	/* Temporary turn off padding (and thus BC setting) since we will use image exactly as is */
 		if ((I = GMT_Read_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, GMT_CONTAINER_AND_DATA, NULL, file, NULL)) == NULL) {
 			gmt_M_str_free (file);

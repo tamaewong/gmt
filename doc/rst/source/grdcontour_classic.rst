@@ -1,19 +1,18 @@
 .. index:: ! grdcontour
+.. include:: module_core_purpose.rst_
 
 **********
 grdcontour
 **********
 
-.. only:: not man
-
-    grdcontour - Make contour map using a grid
+|grdcontour_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**grdcontour** *grid*
+**gmt grdcontour** *grid*
 |-J|\ *parameters*
 [ |-A|\ [**-**\ *contours*][*labelinfo*] ]
 [ |SYN_OPT-B| ]
@@ -52,6 +51,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To contour the file hawaii_grav.nc every 25 mGal on a Mercator map at
 0.5 inch/degree, annotate every 50 mGal (using fontsize = 10p), using 1

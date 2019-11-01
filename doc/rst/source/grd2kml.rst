@@ -1,12 +1,11 @@
 .. index:: ! grd2kml
+.. include:: module_core_purpose.rst_
 
 *******
 grd2kml
 *******
 
-.. only:: not man
-
-    Create KML image quadtree from single grid
+|grd2kml_purpose|
 
 Synopsis
 --------
@@ -56,13 +55,13 @@ Optional Arguments
 
 **-C**\ *cpt*
     Name of the color palette table (CPT). Alternatively,
-    supply the name of a GMT color master dynamic CPT [rainbow] to
+    supply the name of a GMT color master dynamic CPT [turbo] to
     automatically determine a continuous CPT from
     the grid's z-range.  If the dynamic CPT has a default range then
     that range will be imposed instead.
     Another option is to specify **-C**\ *color1*\ ,\ *color2*\ [,\ *color3*\ ,...]
     to build a linear continuous CPT from those colors automatically, scaled to fit the data range.
-    In this case *color1* etc can be a r/g/b triplet, a color name,
+    In this case *color1*, etc., can be a *r/g/b* triplet, a color name,
     or an HTML hexadecimal color (e.g. #aabbcc ).
 
 .. _-E:
@@ -94,13 +93,14 @@ Optional Arguments
 
 **-I**\ [*intensfile*\ \|\ *intensity*\ \|\ *modifiers*]
     Gives the name of a grid file with intensities in the (-1,+1) range,
-    or a constant intensity to apply everywhere; this simply affects the
-    ambient light.  If just **+** is given then we derive an intensity
-    grid from the input data grid *grd_z* via a call to :doc:`grdgradient`
-    using the arguments **-A**\ -45 and **-Nt**\ 1 for that module. You can
-    append **+a**\ *azimuth* and **+n**\ *args* to override those values.  If you want
-    more specific intensities then run :doc:`grdgradient` separately first.
+    or a constant intensity to apply everywhere (affects the ambient light).
+    Alternatively, derive an intensity grid from the input data grid *grid*
+    via a call to :doc:`grdgradient`; append **+a**\ *azimuth* and **+n**\ *args*
+    to specify azimuth and intensity arguments for that module or just give **+d**
+    to select the default arguments (**+a**\ -45\ **+nt**\ 1). If you want a more
+    specific intensity scenario then run :doc:`grdgradient` separately first.
     [Default is no illumination].
+
 
 .. _-L:
 
@@ -145,13 +145,15 @@ illumination angle the automatic illumination can be used instead.
 Examples
 --------
 
+.. include:: explain_example.rst_
+
 To make a quadtree image representation of the large topography grid file ellice_basin.nc, using
 the default tile size, supply automatic shading based on the topography, and use the larger 512x512 tiles,
 supplying a suitable title, try
 
    ::
 
-    gmt grd2kml ellice_basin.nc -I+ -Nellice -L512 -T"Ellice Basin Bathymetry"
+    gmt grd2kml ellice_basin.nc -I+d -Nellice -L512 -T"Ellice Basin Bathymetry"
 
 See Also
 --------

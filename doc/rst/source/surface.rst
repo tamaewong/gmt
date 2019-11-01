@@ -1,12 +1,11 @@
 .. index:: ! surface
+.. include:: module_core_purpose.rst_
 
 *******
 surface
 *******
 
-.. only:: not man
-
-    Grid table data using adjustable tension continuous curvature splines
+|surface_purpose|
 
 Synopsis
 --------
@@ -227,6 +226,8 @@ Optional Arguments
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To grid 5 by 5 minute gravity block means from the ASCII data in
 hawaii_5x5.xyg, using a *tension_factor* = 0.25, a

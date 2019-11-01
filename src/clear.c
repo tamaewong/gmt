@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Author:	Paul Wessel
@@ -20,14 +20,15 @@
  * Version:	6 API
  *
  * Brief synopsis: gmt clear cleans up by removing files or dirs.
- *	gmt clear [all | cache | conf | cpt | data | history | sessions ]
+ *	gmt clear [all | cache | defaults | data | sessions ]
  */
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"clear"
+#define THIS_MODULE_CLASSIC_NAME	"clear"
+#define THIS_MODULE_MODERN_NAME	"clear"
 #define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Delete current history, conf, cpt, or the cache, data or sessions directories"
+#define THIS_MODULE_PURPOSE	"Delete current default settings, or the cache, data or sessions directories"
 #define THIS_MODULE_KEYS	""
 #define THIS_MODULE_NEEDS	""
 #define THIS_MODULE_OPTIONS	"V"
@@ -36,32 +37,27 @@ EXTERN_MSC uint64_t gmtlib_glob_list (struct GMT_CTRL *GMT, const char *pattern,
 EXTERN_MSC void gmtlib_free_list (struct GMT_CTRL *GMT, char **list, uint64_t n);
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: %s all|cache|cpt|conf|data|history|sessions [%s] [%s]\n\n", name, GMT_V_OPT, GMT_PAR_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "usage: %s all|cache|data|sessions|settings [%s]\n\n", name, GMT_V_OPT);
 
 	if (level == GMT_SYNOPSIS) return (GMT_MODULE_SYNOPSIS);
 
-	GMT_Message (API, GMT_TIME_NONE, "\tDeletes the specified item.  Choose on of these targets:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\tDeletes the specified item.  Choose one of these targets:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   cache     Deletes the user\'s cache directory [%s].\n", API->GMT->session.CACHEDIR);
-	GMT_Message (API, GMT_TIME_NONE, "\t   conf      Deletes the user\'s gmt.conf file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   cpt       Deletes the current CPT file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   data      Deletes the user\'s data download directory [%s/server].\n", API->GMT->session.USERDIR);
-	GMT_Message (API, GMT_TIME_NONE, "\t   history   Deletes the user\'s gmt.history file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   sessions  Deletes the user\'s sessions directory [%s].\n", API->session_dir);
+	GMT_Message (API, GMT_TIME_NONE, "\t   settings  Deletes a modern mode session\'s gmt.conf file.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   all       All of the above.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Option (API, "V,.");
+	GMT_Option (API, "V,;");
 	
 	return (GMT_MODULE_USAGE);
 }
 
 GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GMT_OPTION *options) {
 
-	/* This parses the options provided to grdcut and sets parameters in CTRL.
-	 * Any GMT common options will override values set previously by other commands.
-	 * It also replaces any file names specified as input or output with the data ID
-	 * returned when registering these sources/destinations with the API.
+	/* This parses the options provided to clear.
 	 */
 
 	unsigned int n_errors = 0;
@@ -80,15 +76,12 @@ GMT_LOCAL int clear_cache (struct GMTAPI_CTRL *API) {
 	return GMT_NOERROR;
 }
 
-GMT_LOCAL int clear_cpt (struct GMTAPI_CTRL *API) {
-	int error = GMT_NOERROR;
-	char *cpt = gmt_get_current_cpt (API->GMT);
-	if (cpt) {
-		if (gmt_remove_file (API->GMT, cpt))
-			error = GMT_RUNTIME_ERROR;
-		gmt_M_str_free (cpt);
-	}
-	return error;
+GMT_LOCAL int clear_defaults (struct GMTAPI_CTRL *API) {
+	char file[PATH_MAX] = {""};
+	sprintf (file, "%s/gmt.conf", API->gwf_dir);
+	if (gmt_remove_file (API->GMT, file))
+		return GMT_RUNTIME_ERROR;
+	return GMT_NOERROR;
 }
 
 GMT_LOCAL int clear_data (struct GMTAPI_CTRL *API) {
@@ -109,7 +102,7 @@ GMT_LOCAL int clear_sessions (struct GMTAPI_CTRL *API) {
 	unsigned int n_dirs, k;
 	char **dirlist = NULL, *here = NULL;
 	if (access (API->session_dir, F_OK)) {
-		GMT_Report (API, GMT_MSG_NORMAL, "No directory named %s\n", API->session_dir);
+		GMT_Report (API, GMT_MSG_VERBOSE, "No directory named %s\n", API->session_dir);
 		return GMT_FILE_NOT_FOUND;
 	}
 	if ((here = getcwd (NULL, 0)) == NULL) {	/* Get the current directory */
@@ -157,7 +150,7 @@ int GMT_clear (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	if ((error = parse (GMT, options)) != 0) Return (error);
 
@@ -170,18 +163,12 @@ int GMT_clear (void *V_API, int mode, void *args) {
 		if (!strcmp (opt->arg, "all")) {	/* Clear all */
 			if (clear_cache (API))
 				error = GMT_RUNTIME_ERROR;
-			if (clear_cpt (API))
-				error = GMT_RUNTIME_ERROR;
 			if (clear_data (API))
 				error = GMT_RUNTIME_ERROR;
 			if (clear_sessions (API))
 				error = GMT_RUNTIME_ERROR;
-			if (gmt_remove_file (API->GMT, "gmt.history"))
+			if (API->GMT->current.setting.run_mode == GMT_MODERN && clear_defaults (API))
 				error = GMT_RUNTIME_ERROR;
-			if (gmt_remove_file (API->GMT, "gmt.conf"))
-				error = GMT_RUNTIME_ERROR;
-			/* Must turn off history writing otherwise we write out history again... */
-			API->clear = true;
 		}
 		else if (!strcmp (opt->arg, "cache")) {	/* Clear the cache */
 			if (clear_cache (API))
@@ -195,18 +182,11 @@ int GMT_clear (void *V_API, int mode, void *args) {
 			if (clear_sessions (API))
 				error = GMT_RUNTIME_ERROR;
 		}
-		else if (!strcmp (opt->arg, "cpt")) {	/* Clear the current CPT */
-			if (clear_cpt (API))
-				error = GMT_RUNTIME_ERROR;
-		}
-		else if (!strcmp (opt->arg, "history")) {	/* Clear the history */
-			if (gmt_remove_file (API->GMT, "gmt.history"))
-				error = GMT_RUNTIME_ERROR;
-			/* Must turn off history writing otherwise we write out history again... */
-			API->clear = true;
-		}
-		else if (!strcmp (opt->arg, "conf")) {	/* Clear the configuration */
-			if (gmt_remove_file (API->GMT, "gmt.conf"))
+		else if (!strcmp (opt->arg, "settings") || !strcmp (opt->arg, "defaults") || !strcmp (opt->arg, "conf")) {	/* Clear the default settings in modern mode */
+			if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+				GMT_Report (API, GMT_MSG_NORMAL, "Target \"%s\" is only valid in a modern mode session\n", opt->arg);
+			}
+			else if (clear_defaults (API))
 				error = GMT_RUNTIME_ERROR;
 		}
 		else {

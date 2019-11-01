@@ -1,12 +1,11 @@
 .. index:: ! mgd77track
+.. include:: ../module_supplements_purpose.rst_
 
 **********
 mgd77track
 **********
 
-.. only:: not man
-
-    mgd77track - Plot track-line map of MGD77 cruises
+|mgd77track_purpose|
 
 Synopsis
 --------
@@ -40,6 +39,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: ../../oneliner_info.rst_
 
 To generate a Mercator map of the track of the cruise 01010007 in the
 area 70W to 20E, 40S to 20N, using a Mercator scale of 0.1inch/degree,

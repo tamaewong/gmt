@@ -1,12 +1,11 @@
 .. index:: ! gmtdefaults
+.. include:: module_core_purpose.rst_
 
-********
-defaults
-********
+***********
+gmtdefaults
+***********
 
-.. only:: not man
-
-    List current GMT default parameters
+|gmtdefaults_purpose|
 
 Synopsis
 --------
@@ -47,7 +46,7 @@ Optional Arguments
     Print the system GMT defaults to standard output. Append **u**
     for US defaults or **s** for SI defaults. [**-D** alone gives the
     version selected at compile time; If **-D** is omitted, the user's
-    currently active defaults are printed.] 
+    currently active defaults are printed.]
 
 .. include:: explain_help.rst_
 
@@ -66,9 +65,7 @@ are user-definable in GMT.
 Examples
 --------
 
-To get a copy of the GMT parameter defaults in your home directory, run
-
-   ::
+To get a copy of the GMT parameter defaults in your home directory, run::
 
     gmt defaults -D > ~/gmt.conf
 

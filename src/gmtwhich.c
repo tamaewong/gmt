@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: gmtwhich.c will read a list of data files and return the
@@ -25,7 +25,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"gmtwhich"
+#define THIS_MODULE_CLASSIC_NAME	"gmtwhich"
+#define THIS_MODULE_MODERN_NAME	"gmtwhich"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Find full path to specified files"
 #define THIS_MODULE_KEYS	">D}"
@@ -65,7 +66,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct GMTWHICH_CTRL *C) {	/* De
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [files] [-A] [-C] [-D] [-G[c|l|u]] [%s] [%s]\n\n", name, GMT_V_OPT, GMT_PAR_OPT);
      
@@ -76,9 +77,9 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t-C Print Y if found and N if not found.  No path is returned.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-D Print the directory where a file is found [full path to file].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-G Download file if possible and not found locally.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append c to place in the cache directory.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append l to place in the current local directory [Default].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append u to place in the user\'s data directory.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append c to place it in the cache directory.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append l to place it in the current local directory [Default].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Append u to place it in the user\'s data directory.\n");
 	GMT_Option (API, "V,.");
 	
 	return (GMT_MODULE_USAGE);
@@ -144,7 +145,7 @@ int GMT_gmtwhich (void *V_API, int mode, void *args) {
 	int error = 0, fmode;
 	unsigned int first = 0;	/* Real start of filename */
 	
-	char path[GMT_BUFSIZ] = {""}, file[PATH_MAX] = {""}, *Yes = "Y", *No = "N", cwd[GMT_BUFSIZ] = {""}, *p = NULL;
+	char path[PATH_MAX] = {""}, file[PATH_MAX] = {""}, *Yes = "Y", *No = "N", cwd[PATH_MAX] = {""}, *p = NULL;
 	
 	struct GMTWHICH_CTRL *Ctrl = NULL;
 	struct GMT_RECORD *Out = NULL;
@@ -163,7 +164,7 @@ int GMT_gmtwhich (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -180,7 +181,7 @@ int GMT_gmtwhich (void *V_API, int mode, void *args) {
 		Return (API->error);
 	}
 	
-	if (Ctrl->D.active && (getcwd (cwd, GMT_BUFSIZ) == NULL)) {	/* Get full path, even for current dir */
+	if (Ctrl->D.active && (getcwd (cwd, PATH_MAX) == NULL)) {	/* Get full path, even for current dir */
 		GMT_Report (API, GMT_MSG_VERBOSE, "Unable to determine current working directory!\n");
 	}
 	fmode = (Ctrl->A.active) ? R_OK : F_OK;	/* Either readable or existing files */
@@ -192,7 +193,8 @@ int GMT_gmtwhich (void *V_API, int mode, void *args) {
 
 		if (Ctrl->G.active)
 			first = gmt_download_file_if_not_found (GMT, opt->arg, Ctrl->G.mode);
-
+		else if (opt->arg[0] == '@') /* Giave @ without -G is likely a user mistake; remove it */
+			first = 1;
 		if (gmt_M_file_is_remotedata (opt->arg) && !strstr (opt->arg, ".grd"))
 			sprintf (file, "%s.grd", opt->arg);	/* Append the implicit .grd for remote earth_relief grids */
 		else
@@ -208,12 +210,13 @@ int GMT_gmtwhich (void *V_API, int mode, void *args) {
 			}
 			else if (Ctrl->C.active)	/* Just want a Yes */
 				strcpy (path, Yes);
-			GMT_Put_Record (API, GMT_WRITE_DATA, Out);
-			if (Ctrl->G.active && Ctrl->G.mode == GMT_LOCAL_DIR && path[0] == '/' && (L = strrchr(path, '/'))) {
+			if (Ctrl->G.active && Ctrl->G.mode == GMT_LOCAL_DIR && (path[0] == '/' || path[1] == ':') && (L = strrchr(path, '/'))) {
 				/* File found on system but we want a copy in the current directory */
 				if (gmt_rename_file (GMT, path, &L[1], GMT_COPY_FILE))
 					Return (GMT_RUNTIME_ERROR);
+				strncpy (path, &L[1], PATH_MAX-1);	/* Report the file in the local directory now */
 			}
+			GMT_Put_Record (API, GMT_WRITE_DATA, Out);
 		}
 		else {	/* Did not find.  Report no or be quiet */
 			if (Ctrl->C.active) {

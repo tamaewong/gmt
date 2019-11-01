@@ -1,12 +1,11 @@
 .. index:: ! grdfill
+.. include:: module_core_purpose.rst_
 
 *******
 grdfill
 *******
 
-.. only:: not man
-
-    Interpolate across holes in a grid
+|grdfill_purpose|
 
 Synopsis
 --------
@@ -42,8 +41,8 @@ Required Arguments
 
 **-A**\ *mode*\ [*arg*]
     Specify the hole-filling algorithm to use.  Choose from **c** for constant
-    fill and append the constant value, **n** for nearest neighbor and optionally
-    append a search radius in pixels, or **s** for bicubic spline [NOT IMPLEMENTED YET].
+    fill and append the constant value, **n** for nearest neighbor (and optionally
+    append a search radius in pixels), or **s** for bicubic spline [NOT IMPLEMENTED YET].
 
 .. _-G:
 
@@ -85,12 +84,14 @@ Optional Arguments
 Examples
 --------
 
+.. include:: explain_example.rst_
+
 To identify all regions with NaNs in the grid data.grd and create a listing of the
 bounding coordinates of rectangular regions that would cover these NaN areas, try
 
    ::
 
-    gmt grdfill data.grd -L > west_listing.txt
+    gmt grdfill data.grd -L > wesn_listing.txt
 
 To identify the same areas but this time write a multisegment file with polygons
 corresponding to the rectangular subregions, use

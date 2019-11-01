@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: pshistogram.c -- a program for plotting histograms
@@ -24,7 +24,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"pshistogram"
+#define THIS_MODULE_CLASSIC_NAME	"pshistogram"
+#define THIS_MODULE_MODERN_NAME	"histogram"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Calculate and plot histograms"
 #define THIS_MODULE_KEYS	"<D{,CC(,>X},>D),>DI@<D{,ID)"
@@ -463,7 +464,7 @@ GMT_LOCAL bool new_syntax (struct GMT_CTRL *GMT, char *L, char *T, char *W) {
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<table>] %s -T[<min>/<max>/]<inc>[<unit>][+n] [-A] [%s] [-C<cpt>] [-D[+b][+f<font>][+o<off>][+r]]\n", name, GMT_Jx_OPT, GMT_B_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-F] [-G<fill>] [-I[o|O]] %s[-Ll|h|b] [-N[<mode>][+p<pen>]] %s%s[-Q[r]]\n", API->K_OPT, API->O_OPT, API->P_OPT);
@@ -490,7 +491,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   +o sets the offset <off> between bar and label [6p]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   +r rotates the label to be vertical [horizontal]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-F The bin boundaries given should be considered bin centers instead.\n");
-	gmt_fill_syntax (API->GMT, 'G', "Select color/pattern for columns.");
+	gmt_fill_syntax (API->GMT, 'G', NULL, "Select color/pattern for columns.");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Inquire about min/max x and y.  No plotting is done.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append o to output the resulting x, y data.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append O to output all resulting x, y data even with y=0.\n");
@@ -507,7 +508,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   If neither -R nor -I are set, w/e/s/n will be based on input data.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-S Draw a stairs-step diagram [Default is bar histogram].\n");
 	GMT_Option (API, "U,V");
-	gmt_pen_syntax (API->GMT, 'W', "Specify pen for histogram outline or stair-step curves.", 0);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Specify pen for histogram outline or stair-step curves.", 0);
 	GMT_Option (API, "X");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Z To choose type of vertical axis.  Select from\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   0 - Counts [Default].\n");
@@ -586,7 +587,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSHISTOGRAM_CTRL *Ctrl, struct
 			case 'G':
 				Ctrl->G.active = true;
 				if (gmt_getfill (GMT, opt->arg, &Ctrl->G.fill)) {
-					gmt_fill_syntax (GMT, 'G', " ");
+					gmt_fill_syntax (GMT, 'G', NULL, " ");
 					n_errors++;
 				}
 				break;
@@ -611,7 +612,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSHISTOGRAM_CTRL *Ctrl, struct
 				Ctrl->N.selected[mode] = true;
 				if ((c = strstr (opt->arg, "+p")) != NULL) {
 					if (gmt_getpen (GMT, &c[2], &Ctrl->N.pen[mode])) {
-						gmt_pen_syntax (GMT, 'L', " ", 0);
+						gmt_pen_syntax (GMT, 'L', NULL, " ", 0);
 						n_errors++;
 					}
 				}
@@ -668,7 +669,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSHISTOGRAM_CTRL *Ctrl, struct
 		if (w_arg) {	/* Gave -W<pen> */
 			Ctrl->W.active = true;
 			if (gmt_getpen (GMT, w_arg, &Ctrl->W.pen)) {
-				gmt_pen_syntax (GMT, 'W', " ", 0);
+				gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 				n_errors++;
 			}
 		}
@@ -704,7 +705,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSHISTOGRAM_CTRL *Ctrl, struct
 				Ctrl->W.active = true;
 				//GMT_Report (API, GMT_MSG_COMPAT, "The -L<pen> option is deprecated; use -W<pen> instead.\n");
 				if (gmt_getpen (GMT, l_arg, &Ctrl->W.pen)) {
-					gmt_pen_syntax (GMT, 'W', " ", 0);
+					gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 					n_errors++;
 				}
 			}
@@ -736,7 +737,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSHISTOGRAM_CTRL *Ctrl, struct
 int GMT_histogram (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: histogram\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -773,7 +774,7 @@ int GMT_pshistogram (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (gmt_M_compat_check (GMT, 4)) {	/* Must see if -E was given and temporarily change it */
 		struct GMT_OPTION *opt = NULL;
 		for (opt = options; opt->next; opt = opt->next) {

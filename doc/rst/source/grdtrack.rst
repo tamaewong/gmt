@@ -1,12 +1,11 @@
 .. index:: ! grdtrack
+.. include:: module_core_purpose.rst_
 
 ********
 grdtrack
 ********
 
-.. only:: not man
-
-    Sample grids at specified (x,y) locations
+|grdtrack_purpose|
 
 Synopsis
 --------
@@ -115,7 +114,7 @@ Optional Arguments
     profiles are output.  Choose to only output the left or right halves
     of the profiles by appending **+l** or **+r**, respectively.  Append suitable units
     to *length*; it sets the unit used for *ds* [and *spacing*] (See
-    :ref:`Unit_attributes` below). The default unit for geographic grids is meter while
+    `Units`_ below). The default unit for geographic grids is meter while
     Cartesian grids implies the user unit.  The output columns will be
     *lon*, *lat*, *dist*, *azimuth*, *z1*, *z2*, ..., *zn* (The *zi* are
     the sampled values for each of the *n* grids)
@@ -280,6 +279,13 @@ important. Use bilinear to minimize the propagation of NaNs, or lower
 Examples
 --------
 
+.. include:: explain_example.rst_
+
+To extract a profile along a great circle between (0,0) to (20,20) from the remote grid earth_relief_05m,
+and only write out (dist, topo) records, try::
+
+    gmt grdtrack -G@earth_relief_05m -R0/20/0/20 -EBL/TR+d -o3,2 > profile.txt
+
 To sample the file hawaii_topo.nc along the SEASAT track track_4.xyg
 (An ASCII table containing longitude, latitude, and SEASAT-derived
 gravity, preceded by one header record):
@@ -312,7 +318,7 @@ try
 
    ::
 
-    grdtrack -ELB/RT+i1k+d -Gdata.nc -je > profiles.txt
+    gmt grdtrack -ELB/RT+i1k+d -Gdata.nc -je > profiles.txt
 
 See Also
 --------

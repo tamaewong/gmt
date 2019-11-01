@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
 *
-*	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+*	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
 *	See LICENSE.TXT file for copying and redistribution conditions.
 *
 *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
 *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *	GNU Lesser General Public License for more details.
 *
-*	Contact info: gmt.soest.hawaii.edu
+*	Contact info: www.generic-mapping-tools.org
 *--------------------------------------------------------------------*/
 /*
  * Brief synopsis: mapproject reads a pair of coordinates [+ optional data fields] from
@@ -38,7 +38,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"mapproject"
+#define THIS_MODULE_CLASSIC_NAME	"mapproject"
+#define THIS_MODULE_MODERN_NAME	"mapproject"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Forward and inverse map transformations, datum conversions and geodesy"
 #define THIS_MODULE_KEYS	"<D{,LD(=,>D},W-("
@@ -185,7 +186,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MAPPROJECT_CTRL *C) {	/* 
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <table> %s %s [-C[<dx></dy>]]\n", name, GMT_J_OPT, GMT_Rgeo_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-Ab|B|f|F|o|O[<lon0>/<lat0>][+v]] [-D%s] [-E[<datum>]] [-F[<unit>]]\n\t[-G[<lon0>/<lat0>][+a][+i][+u<unit>][+v]]", GMT_DIM_UNITS_DISPLAY);
@@ -267,7 +268,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 GMT_LOCAL char set_unit_and_mode (struct GMTAPI_CTRL *API, char *arg, unsigned int *mode) {
 	unsigned int k = 0;
 	*mode = GMT_GREATCIRCLE;	/* Default is great circle distances */
-	if (arg[0]) {
+	if (strchr ("-+", arg[0])) {
 		if (gmt_M_compat_check (API->GMT, 6))
 			GMT_Report (API, GMT_MSG_COMPAT, "Leading -|+ with unit to set flat Earth or ellipsoidal mode is deprecated; use -j<mode> instead\n");
 		else {
@@ -481,7 +482,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MAPPROJECT_CTRL *Ctrl, struct 
 			case 'G':	/* Syntax. Old: -G[<lon0/lat0>][/[+|-]unit][+|-]  New: -G[<lon0/lat0>][+i][+a][+u<unit>][+v] */
 				Ctrl->G.active = true;
 				for (n_slash = k = 0; opt->arg[k]; k++) if (opt->arg[k] == '/') n_slash++;
-				if (n_slash == 2 || !(strstr (opt->arg, "+a") || strstr (opt->arg, "+i") || strstr (opt->arg, "+u") || strstr (opt->arg, "+v")))
+				if (opt->arg[0] && (n_slash == 2 || !(strstr (opt->arg, "+a") || strstr (opt->arg, "+i") || strstr (opt->arg, "+u") || strstr (opt->arg, "+v"))))
 					n_errors += old_G_parse (GMT, opt->arg, Ctrl);		/* -G[<lon0/lat0>][/[+|-]unit][+|-] */
 				else {	/* -G[<lon0/lat0>][+i][+a][+u[+|-]<unit>][+v] */
 					/* Note [+|-] is now deprecated in GMT 6; use -je instead */
@@ -490,9 +491,10 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MAPPROJECT_CTRL *Ctrl, struct 
 					 * to avoid parsing problems. */
 					if ((q = strstr (opt->arg, "+u")) && q[2] == '+') q[2] = '*';
 					if (gmt_validate_modifiers (GMT, opt->arg, 'G', "aiuv")) n_errors++;
-					if ((p = gmt_first_modifier (GMT, opt->arg, "aiuv")) == NULL) {	/* This cannot happen given the strstr checks, but Coverity prefers it */
-						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -G: No modifiers?\n");
-						n_errors++;
+					if ((p = gmt_first_modifier (GMT, opt->arg, "aiuv")) == NULL) {	/* If just -G given then we get here; default to cumulate distances in meters */
+						Ctrl->G.mode |= GMT_MP_VAR_POINT;
+						Ctrl->G.mode |= GMT_MP_CUMUL_DIST;
+						Ctrl->used[MP_COL_DS] = true;	/* Output incremental distances */
 						break;
 					}
 					pos = 0;	txt_a[0] = 0;
@@ -776,7 +778,7 @@ int GMT_mapproject (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);

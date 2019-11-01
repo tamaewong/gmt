@@ -1,12 +1,11 @@
 .. index:: ! text
+.. include:: module_core_purpose.rst_
 
 ******
 text
 ******
 
-.. only:: not man
-
-    Plot or typeset text on maps
+|text_purpose|
 
 Synopsis
 --------
@@ -17,7 +16,7 @@ Synopsis
 |SYN_OPT-Rz|
 [ |-A| ]
 |SYN_OPT-B|
-[ |-C|\ [*dx/dy*\ ][\ **+t**\ o\|\O\|\c\|C\ ] ]
+[ |-C|\ [*dx/dy*\ ][\ **+to**\ \|\ **O**\ \|\ **c**\ \|\ **C**\ ] ]
 [ |-D|\ [**j**\ \|\ **J**]\ *dx*\ [/*dy*][\ **+v**\ [*pen*]] ]
 [ |-F|\ [**+a**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+j**\ [*justify*]][\ **+h**\ \|\ **+l**\|\ **+r**\ [*first*] \|\ **+t**\ *text*\ \|\ **+z**\ [*format*]] ] 
 [ |-G|\ *color* ]
@@ -31,6 +30,7 @@ Synopsis
 [ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
+[ **-it**\ *word* ]
 [ |SYN_OPT-p| ]
 [ |SYN_OPT-t| ]
 [ |SYN_OPT-:| ]
@@ -40,6 +40,10 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
+
+.. include:: oneliner_info.rst_
 
 To plot just the red outlines of the (lon lat text strings) stored in the
 file text.txt on a Mercator plot with the given specifications, use

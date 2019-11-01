@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ * Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  * See LICENSE.TXT file for copying and redistribution conditions.
  *
  * img2grd.c
@@ -56,9 +56,8 @@
 #include "gmt_dev.h"
 #include "common_byteswap.h"
 
-EXTERN_MSC int gmtlib_get_option_id (int start, char *this_option);
-
-#define THIS_MODULE_NAME	"img2grd"
+#define THIS_MODULE_CLASSIC_NAME	"img2grd"
+#define THIS_MODULE_MODERN_NAME	"img2grd"
 #define THIS_MODULE_LIB		"img"
 #define THIS_MODULE_PURPOSE	"Extract a subset from an img file in Mercator or Geographic format"
 #define THIS_MODULE_KEYS	"<G{,GG}"
@@ -174,7 +173,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct IMG2GRD_CTRL *C) {	/* Dea
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <world_image_filename> %s -G<outgrid> -T<type>\n", name, GMT_Rgeo_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-D[<minlat>/<maxlat>]] [-E] [-F] [-I<min>[m|s]] [-M] [-N<navg>] [-S[<scale>]] [%s]\n\t[-W<maxlon>] [%s] [%s]\n\n", GMT_V_OPT, GMT_n_OPT, GMT_PAR_OPT);
@@ -407,7 +406,7 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 	int16_t *row = NULL;
 	uint16_t *u2 = NULL;
 
-	char infile[GMT_BUFSIZ] = {""}, cmd[GMT_BUFSIZ] = {""}, input[GMT_STR16] = {""}, output[GMT_LEN256] = {""};
+	char infile[PATH_MAX] = {""}, cmd[GMT_BUFSIZ] = {""}, input[GMT_STR16] = {""}, output[PATH_MAX] = {""};
 	char z_units[GMT_GRID_UNIT_LEN80] = {""}, exact_R[GMT_LEN256] = {""};
 
 	FILE *fp = NULL;
@@ -432,7 +431,7 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -479,6 +478,10 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 			case GMT_IMG_NLON_2M*GMT_IMG_NLAT_2M_72*GMT_IMG_ITEMSIZE:
 				if (lat == 0.0) lat = GMT_IMG_MAXLAT_72;
 				min = 2;
+				break;
+			case GMT_IMG_NLON_4M*GMT_IMG_NLAT_4M_72*GMT_IMG_ITEMSIZE:	/* Test grid only */
+				if (lat == 0.0) lat = GMT_IMG_MAXLAT_72;
+				min = 4;
 				break;
 			default:
 				if (lat == 0.0) return (GMT_GRDIO_BAD_IMG_LAT);
@@ -746,7 +749,7 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 		 * south and north boundaries in the specified -R setting.  Because this is only an issue in this program we replace
 		 * the given -R with the exact -R in the gmt.history file so that any subsequent module call using -R shorthand will
 		 * get the actual (exect) region and not the requested (initial, approximate) region. */
-		int id = gmtlib_get_option_id (0, "R");			/* The -R[P] item in the history array */
+		int id = gmt_get_option_id (0, "R");			/* The -R[P] item in the history array */
 		if (GMT->current.setting.run_mode == GMT_MODERN) id++;	/* Instead pick the -RG item under modern mode since this is not a plotting tool */
 		gmt_M_str_free (GMT->init.history[id]);			/* Free the previous history string set during parsing */
 		GMT->init.history[id] = strdup (exact_R);		/* Replace it with the exact region */
@@ -781,7 +784,7 @@ int GMT_img2grd (void *V_API, int mode, void *args) {
 		}
 	}
 	else	/* The output here is the final result */
-		strncpy (output, Ctrl->G.file, GMT_LEN256-1);
+		strncpy (output, Ctrl->G.file, PATH_MAX-1);
 	sprintf (cmd, "-R%g/%g/%g/%g -Jm1i -I %s -G%s --PROJ_ELLIPSOID=Sphere --PROJ_LENGTH_UNIT=inch --GMT_HISTORY=false", west, east, south2, north2, input, output);
 	GMT_Report (API, GMT_MSG_DEBUG, "Calling grdproject %s.\n", cmd);
 	if (GMT_Call_Module (API, "grdproject", GMT_MODULE_CMD, cmd)!= GMT_NOERROR) {	/* Inverse project the grid or fail */

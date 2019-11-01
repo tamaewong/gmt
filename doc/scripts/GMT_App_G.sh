@@ -8,7 +8,7 @@ dy=-0.2222
 y0=4.3
 yy=4.0778
 tr '",' '  ' < "${GMT_SOURCE_DIR}"/src/standard_adobe_fonts.h | awk '{print $2}' > tt.d
-gmt begin GMT_App_G ps
+gmt begin GMT_App_G
 gmt set MAP_FRAME_PEN thinner
 gmt plot -R0/5.4/0/$y0 -Jx1i -B0 <<EOF
 >
@@ -32,13 +32,13 @@ gmt plot <<EOF
 5.4	0
 EOF
 
-i=1
+let i=1
 while [ $i -le 17 ]
 do
-	i1=`echo "$i - 1" | bc`
-	i2=`echo "$i1 + 17" | bc`
+	i1=$(( i-1 ))
+	i2=$(( i1+17 ))
 	k1=$i
-	k2=`echo "$i + 17" | bc`
+	k2=$(( i+17 ))
 
 	f1=`sed -n ${k1}p tt.d`
 	f2=`sed -n ${k2}p tt.d`
@@ -53,7 +53,7 @@ do
 2.85	0.03	10p,$fn2	BC	$i2
 3.1	0.03	10p,$i2		BL	$f2
 EOF
-	i=`echo "$i + 1" | bc`
+	let i=i+1
 done
 
 gmt text -Y${dy}i -F+f+j <<EOF
@@ -61,4 +61,4 @@ gmt text -Y${dy}i -F+f+j <<EOF
 3.1	0.03	10p,ZapfDingbats	BL	ZapfDingbats @%0%(ZapfDingbats)@%%
 EOF
 
-gmt end
+gmt end show

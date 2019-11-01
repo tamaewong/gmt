@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *    Copyright (c) 2004-2019 by P. Wessel
+ *    Copyright (c) 2004-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *    See README file for copying and redistribution conditions.
  *--------------------------------------------------------------------*/
 /*
@@ -23,9 +23,10 @@
 #include "gmt_dev.h"
 #include "mgd77.h"
 
-#define THIS_MODULE_NAME	"mgd77track"
+#define THIS_MODULE_CLASSIC_NAME	"mgd77track"
+#define THIS_MODULE_MODERN_NAME	"mgd77track"
 #define THIS_MODULE_LIB		"mgd77"
-#define THIS_MODULE_PURPOSE	"Plot track-line map of MGD77 cruises"
+#define THIS_MODULE_PURPOSE	"Plot track-lines of MGD77 cruises"
 #define THIS_MODULE_KEYS	">X}"
 #define THIS_MODULE_NEEDS	"JR"
 #define THIS_MODULE_OPTIONS "->BJKOPRUVXYptxy" GMT_OPT("c")
@@ -147,7 +148,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MGD77TRACK_CTRL *C) {	/* 
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	char day_marker_size[8], dist_marker_size[8];
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	
 	if (API->GMT->current.setting.proj_length_unit == GMT_CM) {
@@ -459,14 +460,14 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77TRACK_CTRL *Ctrl, struct 
 				Ctrl->T.marker[mrk].marker_size = gmt_M_to_inch (GMT, ms);
 				if (gmt_getfill (GMT, mc, &Ctrl->T.marker[mrk].s)) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Bad fill specification for -T\n");
-					gmt_fill_syntax (GMT, 'T', " ");
+					gmt_fill_syntax (GMT, 'T', NULL, " ");
 					n_errors++;
 				}
-				sprintf (tmp, "%s,%s,", mfs, mf);	/* Put mfs and mf together in order to be used by gmt_getfont */
+				snprintf (tmp, GMT_LEN64, "%s,%s,", mfs, mf);	/* Put mfs and mf together in order to be used by gmt_getfont */
 				gmt_getfont (GMT, tmp, &Ctrl->T.marker[mrk].font);
 				if (gmt_getfill (GMT, mfc, &Ctrl->T.marker[mrk].f)) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Bad fill specification for -T\n");
-					gmt_fill_syntax (GMT, 'T', " ");
+					gmt_fill_syntax (GMT, 'T', NULL, " ");
 					n_errors++;
 				}
 				Ctrl->T.marker[mrk].font_size = Ctrl->T.marker[mrk].font.size * GMT->session.u2u[GMT_PT][GMT_INCH];
@@ -475,7 +476,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77TRACK_CTRL *Ctrl, struct 
 			case 'W':
 				Ctrl->W.active = true;
 				if (gmt_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
-					gmt_pen_syntax (GMT, 'W', " ", 0);
+					gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 					n_errors++;
 				}
 				break;
@@ -592,7 +593,7 @@ int GMT_mgd77track (void *V_API, int mode, void *args) {
 
 	if ((error = gmt_report_usage (API, options, 0, usage)) != GMT_NOERROR) bailout (error);	/* Give usage if requested */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 
 	/* Parse the command-line arguments */
 

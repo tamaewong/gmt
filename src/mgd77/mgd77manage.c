@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *    Copyright (c) 2005-2019 by P. Wessel
+ *    Copyright (c) 2005-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  * mgd77manage is used to (1) remove data columns from mgd77+ files
  * or (2) add a new data column to mgd77+ files.  Data can be added
  * from data tables, created from reference field formulas, or by
@@ -21,7 +21,8 @@
 #include "mgd77.h"
 #include "mgd77_e77.h"	/* E77 Header Errata Codes */
 
-#define THIS_MODULE_NAME	"mgd77manage"
+#define THIS_MODULE_CLASSIC_NAME	"mgd77manage"
+#define THIS_MODULE_MODERN_NAME	"mgd77manage"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Manage the content of MGD77+ files"
 #define THIS_MODULE_KEYS	""
@@ -121,7 +122,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *C) {	/*
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <cruise(s)> [-Aa|c|d|D|e|E|g|i|n|t|T<info>[+f]] [-D<name1>,<name2>,...]\n", name);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-E<no_char>] [-F] [-I<abbrev>/<name>/<units>/<size>/<scale>/<offset>/\"comment\"]\n");
@@ -321,7 +322,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct MGD77MANAGE_CTRL *Ctrl, struct
 	unsigned int n_errors = 0, k, n_cruises = 0;
 	bool got_table, got_grid, strings;
 	nc_type c_nc_type;
-	char file[GMT_BUFSIZ] = {""}, *c = NULL;
+	char file[PATH_MAX] = {""}, *c = NULL;
 	struct GMT_OPTION *opt = NULL;
 	struct GMTAPI_CTRL *API = GMT->parent;
 	
@@ -550,7 +551,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -797,7 +798,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 		if (Ctrl->D.active) {	/* Must create a new file with everything except the fields to be deleted */
 			int id, c;
 			bool reset_column = false;
-			char oldfile[GMT_BUFSIZ+4] = {""};
+			char oldfile[PATH_MAX+4] = {""};
 			
 			if (column != MGD77_NOT_SET) {	/* Get info about this existing column to see if it is compatible with new data */
 				n_dims = (D->H.info[In.order[column].set].col[In.order[column].item].constant) ? 0 : 1;
@@ -1097,7 +1098,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 			 */
 			FILE *fp_e = NULL;
 			int cdf_var_id, cdf_adjust;
-			char ID[16] = {""}, date[16] = {""}, field[GMT_LEN64] = {""}, efile[GMT_BUFSIZ] = {""};
+			char ID[16] = {""}, date[16] = {""}, field[GMT_LEN64] = {""}, efile[PATH_MAX] = {""};
 			char E77[256] = {""}, timestamp[GMT_LEN64] = {""}, answer[GMT_BUFSIZ] = {""}, code[GMT_BUFSIZ] = {""}, kind, YorN;
 			int number, type, it, id, key, n_E77_flags, day, month, year, item;
 			int n_E77_headers, n_E77_scales, n_E77_offsets, n_E77_recalcs, n_unprocessed, e_error = 0, old_flags;
@@ -1616,7 +1617,7 @@ int GMT_mgd77manage (void *V_API, int mode, void *args) {
 		if (n_bad) {	/* Report what we found */
 			if (In.verbose_level & 1)
 				fprintf (fp_err, "%s: %s [%s] had %" PRIu64 " values outside valid range <%g,%g> for the chosen type (set to NaN = %g)\n",
-				THIS_MODULE_NAME, In.NGDC_id, Ctrl->I.c_abbrev, n_bad, MGD77_Low_val[c_nc_type], MGD77_High_val[c_nc_type], MGD77_NaN_val[c_nc_type]);
+				THIS_MODULE_CLASSIC_NAME, In.NGDC_id, Ctrl->I.c_abbrev, n_bad, MGD77_Low_val[c_nc_type], MGD77_High_val[c_nc_type], MGD77_NaN_val[c_nc_type]);
 		}
 
 		MGD77_Close_File (GMT, &In);

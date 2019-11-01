@@ -1,12 +1,11 @@
 .. index:: ! grdmath
+.. include:: module_core_purpose.rst_
 
 *******
 grdmath
 *******
 
-.. only:: not man
-
-    grdmath - Reverse Polish Notation (RPN) calculator for grids (element by element)
+|grdmath_purpose|
 
 Synopsis
 --------
@@ -87,7 +86,7 @@ Optional Arguments
 .. _-M:
 
 **-M**
-    By default any derivatives calculated are in z_units/ x(or
+    By default any derivatives calculated are in z_units/x(or
     y)\_units. However, the user may choose this option to convert dx,dy
     in degrees of longitude,latitude into meters using a flat Earth
     approximation, so that gradients are in z_units/meter.
@@ -727,6 +726,8 @@ is required that the optional comment flag (:) must be followed by a space.
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To compute all distances to north pole:
 

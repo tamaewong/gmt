@@ -1,19 +1,18 @@
 .. index:: ! psmask
+.. include:: module_core_purpose.rst_
 
 ******
 psmask
 ******
 
-.. only:: not man
-
-    psmask - Clip or mask map areas with no data table coverage
+|psmask_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**psmask** [ *table* ]
+**gmt psmask** [ *table* ]
 |SYN_OPT-I|
 |-J|\ *parameters*
 |SYN_OPT-R|
@@ -51,6 +50,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To make an overlay that will mask out the regions of a
 contour map where there is no control data using clip polygons, use:

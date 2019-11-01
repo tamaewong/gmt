@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------
  *
  * Author:	Paul Wessel
@@ -72,5 +72,6 @@ EXTERN_MSC int GMT_segyz (void *API, int mode, void *args);
 EXTERN_MSC int GMT_segy (void *API, int mode, void *args);
 
 EXTERN_MSC const char *gmt_current_name (const char *module, char modname[]);
+EXTERN_MSC const char *gmt_get_full_name (struct GMTAPI_CTRL *API, const char *module);
 
 #endif  /* GMT_MODERN_H */

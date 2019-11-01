@@ -1,12 +1,11 @@
-.. index:: ! pmodeler
+.. index:: ! gmtpmodeler
+.. include:: ../module_supplements_purpose.rst_
 
-********
-pmodeler
-********
+***********
+gmtpmodeler
+***********
 
-.. only:: not man
-
-    pmodeler - Evaluate a plate motion model at given locations
+|gmtpmodeler_purpose|
 
 Synopsis
 --------
@@ -154,7 +153,7 @@ formed, try
    ::
 
     gmt pmodeler pac_age.txt -EPac_APM.txt -V -Fpac_clip_path.txt \
-                    -Sv > pac_vel.txt 
+                    -Sv > pac_vel.txt
 
 To determine how far the crust has moved since formation, try
 
@@ -168,7 +167,7 @@ To save the coordinates of the crust's formation, try
    ::
 
     gmt pmodeler pac_age.txt -EPac_APM.txt -V -Fpac_clip_path.txt \
-                    -SXY > ac_origin_xy.txt 
+                    -SXY > ac_origin_xy.txt
 
 Notes
 -----

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * API functions to support the psbasemap application.
@@ -27,7 +27,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"psbasemap"
+#define THIS_MODULE_CLASSIC_NAME	"psbasemap"
+#define THIS_MODULE_MODERN_NAME	"basemap"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot base maps and frames"
 #define THIS_MODULE_KEYS	">X},>DA@AD)"
@@ -41,7 +42,7 @@ struct PSBASEMAP_CTRL {
 		bool active;
 		char *file;
 	} A;
-	struct D {	/* -D[g|j|n|x]<refpoint>+w<width>[<unit>][/<height>[<unit>]][+j<justify>[+o<dx>[/<dy>]][+s<file>][+t] or [<unit>]<xmin>/<xmax>/<ymin>/<ymax>[r][+s<file>][+t] */
+	struct D {	/* -D[g|j|n|x]<refpoint>+w<width>[<unit>][/<height>[<unit>]][+j<justify>[+o<dx>[/<dy>]][+s<file>][+t] or <xmin>/<xmax>/<ymin>/<ymax>[+r][+s<file>][+t][+u<unit>] */
 		bool active;
 		struct GMT_MAP_INSET inset;
 	} D;
@@ -80,13 +81,13 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct PSBASEMAP_CTRL *C) {	/* D
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the psbasemap synopsis and optionally full usage information */
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	bool classic = (API->GMT->current.setting.run_mode == GMT_CLASSIC);
 	
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s %s %s [%s]\n", name, GMT_J_OPT, GMT_Rgeoz_OPT, GMT_B_OPT);
 	if (classic) {
-		GMT_Message (API, GMT_TIME_NONE, "\t[-A[<file>]] [-D%s] |\n\t[-D%s]\n", GMT_INSET_A, GMT_INSET_B);
+		GMT_Message (API, GMT_TIME_NONE, "\t[-A[<file>]] [-D%s] |\n\t[-D%s]\n", GMT_INSET_A_CL, GMT_INSET_B_CL);
 		GMT_Message (API, GMT_TIME_NONE, "\t[-F[d|l|t]%s] %s\n", GMT_PANEL, API->K_OPT);
 	}
 	else {
@@ -193,7 +194,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSBASEMAP_CTRL *Ctrl, struct G
 					GMT_Report (API, GMT_MSG_COMPAT, "Option -G is deprecated; -B...+g%s was set instead, use this in the future.\n", opt->arg);
 					GMT->current.map.frame.paint = true;
 					if (gmt_getfill (GMT, opt->arg, &GMT->current.map.frame.fill)) {
-						gmt_fill_syntax (GMT, 'G', " ");
+						gmt_fill_syntax (GMT, 'G', NULL, " ");
 						n_errors++;
 					}
 				}
@@ -238,7 +239,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSBASEMAP_CTRL *Ctrl, struct G
 int GMT_basemap (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: basemap\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -265,7 +266,7 @@ int GMT_psbasemap (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -326,7 +327,7 @@ int GMT_psbasemap (void *V_API, int mode, void *args) {
 			gmt_draw_map_scale (GMT, &Ctrl->L.scale);
 	}
 	if (Ctrl->T.active) gmt_draw_map_rose (GMT, &Ctrl->T.rose);
-	if (Ctrl->D.active) gmt_draw_map_inset (GMT, &Ctrl->D.inset);
+	if (Ctrl->D.active) gmt_draw_map_inset (GMT, &Ctrl->D.inset, false);
 
 	gmt_plane_perspective (GMT, -1, 0.0);
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 
 /*
@@ -30,6 +30,9 @@
 
 const char *gmt_current_name (const char *module, char modname[]) {
 	/* Given a module, return its document (modern name) and set its classic modname */
+	size_t L = strlen (module);
+	
+	if (L >= 32U) return module;	/* Safety valve to protect modname array from oversize */
 	
 	/* First check for modern names and set the classic name in modname */
 	if      (!strncmp (module, "histogram",    9U)) { strcpy (modname, "pshistogram"); return module; }
@@ -49,7 +52,7 @@ const char *gmt_current_name (const char *module, char modname[]) {
 	else if (!strncmp (module, "coast",        5U)) { strcpy (modname, "pscoast");     return module; }
 	else if (!strncmp (module, "velo",         4U)) { strcpy (modname, "psvelo");      return module; }
 	else if (!strncmp (module, "segy",         4U)) { strcpy (modname, "pssegy");      return module; }
-	else if (!strncmp (module, "text",         4U)) { strcpy (modname, "text");        return module; }
+	else if (!strncmp (module, "text",         4U)) { strcpy (modname, "pstext");      return module; }
 	else if (!strncmp (module, "plot",         4U)) { strcpy (modname, "psxy");        return module; }
 	else if (!strncmp (module, "meca",         4U)) { strcpy (modname, "psmeca");      return module; }
 	else if (!strncmp (module, "rose",         4U)) { strcpy (modname, "psrose");      return module; }
@@ -85,6 +88,33 @@ const char *gmt_current_name (const char *module, char modname[]) {
 	return module;
 }
 
+const char *gmt_get_full_name (struct GMTAPI_CTRL *API, const char *module) {
+	gmt_M_unused (API);
+	/* Given a named module, return its full name if a leading gmt is missing */
+	
+	/* Look for classic modules that now have a different modern mode name */
+	if      (!strcmp (module, "2kml"))      return "gmt2kml";
+	else if (!strcmp (module, "connect"))   return "gmtconnect";
+	else if (!strcmp (module, "convert"))   return "gmtconvert";
+	else if (!strcmp (module, "defaults"))  return "gmtdefaults";
+	else if (!strcmp (module, "get"))       return "gmtget";
+	else if (!strcmp (module, "info"))      return "gmtinfo";
+	else if (!strcmp (module, "logo"))      return "gmtlogo";
+	else if (!strcmp (module, "math"))      return "gmtmath";
+	else if (!strcmp (module, "regress"))   return "gmtregress";
+	else if (!strcmp (module, "select"))    return "gmtselect";
+	else if (!strcmp (module, "set"))       return "gmtset";
+	else if (!strcmp (module, "simplify"))  return "gmtsimplify";
+	else if (!strcmp (module, "spatial"))   return "gmtspatial";
+	else if (!strcmp (module, "vector"))    return "gmtvector";
+	else if (!strcmp (module, "which"))     return "gmtwhich";
+	else if (!strcmp (module, "pmodeler"))  return "gmtpmodeler";
+	else if (!strcmp (module, "flexure"))   return "gmtflexure";
+	else if (!strcmp (module, "gravmag3d")) return "gmtgravmag3d";
+	return module;
+}
+
+
 const char *gmtlib_get_active_name (struct GMTAPI_CTRL *API, const char *module) {
 	/* Given a classic name module, return its name according to the run mode */
 	
@@ -118,7 +148,7 @@ const char *gmtlib_get_active_name (struct GMTAPI_CTRL *API, const char *module)
 	return module;
 }
 
-bool gmtlib_is_modern_name (struct GMTAPI_CTRL *API, char *module) {
+bool gmtlib_is_modern_name (struct GMTAPI_CTRL *API, const char *module) {
 	bool is_modern = false;	/* If classic */
 	gmt_M_unused (API);
 	/* Returns true if module is a modern name */

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Author:      Paul Wessel
@@ -25,7 +25,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"grdflexure"
+#define THIS_MODULE_CLASSIC_NAME	"grdflexure"
+#define THIS_MODULE_MODERN_NAME	"grdflexure"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute flexural deformation of 3-D surfaces for various rheologies"
 #define THIS_MODULE_KEYS	"<G{,GG},LD),TD("
@@ -637,7 +638,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDFLEXURE_CTRL *Ctrl, struct 
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <topogrid> -D<rhom>/<rhol>[/<rhoi>]/<rhow> -E<te> -G<outgrid> [-A<Nx/Ny/Nxy>] [-C[p|y]<value] [-F<nu_a>[/<h_a>/<nu_m>]]\n", name);
 	GMT_Message (API, GMT_TIME_NONE,"\t[-L<list>] [-M<tm>] [-N%s] [-S<beta>] [-T<t0>[/<t1>/<dt>|<file>|<n>[+l]]]\n\t[%s] [-W<wd>] [-Z<zm>] [-fg] [%s]\n\n", GMT_FFT_OPT, GMT_V_OPT, GMT_PAR_OPT);
@@ -792,7 +793,7 @@ int GMT_grdflexure (void *V_API, int mode, void *args) {
 	int error;
 	bool retain_original;
 	gmt_grdfloat *orig_load = NULL;
-	char file[GMT_LEN256] = {""}, time_fmt[GMT_LEN64] = {""};
+	char file[PATH_MAX] = {""}, time_fmt[GMT_LEN64] = {""};
 
 	struct GMT_FFT_WAVENUMBER *K = NULL;
 	struct RHEOLOGY *R = NULL;
@@ -815,7 +816,7 @@ int GMT_grdflexure (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);

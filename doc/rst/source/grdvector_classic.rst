@@ -1,19 +1,18 @@
 .. index:: ! grdvector
+.. include:: module_core_purpose.rst_
 
 *********
 grdvector
 *********
 
-.. only:: not man
-
-    grdvector - Plot vector field from two component grids
+|grdvector_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**grdvector** *compx.nc* *compy.nc* **-J**\ *parameters* [ |-A| ]
+**gmt grdvector** *compx.nc* *compy.nc* **-J**\ *parameters* [ |-A| ]
 [ |SYN_OPT-B| ]
 [ |-C|\ *cpt* ]
 [ |-G|\ *fill* ]
@@ -38,6 +37,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To draw the vector field given by the files r.nc and theta.nc on a
 linear plot with scale 5 cm per data unit, using vector rather than

@@ -1,6 +1,6 @@
 /*
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * API functions to support the psevents application.
@@ -25,7 +25,8 @@
  */
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"psevents"
+#define THIS_MODULE_CLASSIC_NAME	"psevents"
+#define THIS_MODULE_MODERN_NAME	"events"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot event symbols and labels for a moment in time"
 #define THIS_MODULE_KEYS	"<D{,CC(,>X}"
@@ -127,7 +128,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct PSEVENTS_CTRL *C) {	/* De
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<table>] %s %s -S<symbol>[<size>[u]]\n", name, GMT_J_OPT, GMT_Rgeoz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t-T<now> [-C<cpt>] [-D[j|J]<dx>[/<dy>][+v[<pen>]] [-E[s|t][+o|O<dt>][+r<dt>][+p<dt>][+d<dt>][+f<dt>]]\n");
@@ -168,13 +169,13 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t     +z[<fmt>] will use formatted input z values (requires -C) via format <fmt> [FORMAT_FLOAT_MAP].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-L Set finite length of events, otherwise we assume they are all infinite.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If no arg we read lengths from file; append t for reading end times instead.\n");
-	gmt_fill_syntax (API->GMT, 'G', "Specify a fixed symbol color [no fill].");
+	gmt_fill_syntax (API->GMT, 'G', NULL, "Specify a fixed symbol color [no fill].");
 	GMT_Message (API, GMT_TIME_NONE, "\t-M Append i for intensity, s for size, or t for transparency; repeatable.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append value to use during rise, plateau, or decay phases.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append +c to set a separate terminal value for the coda [no coda].\n");
 	GMT_Option (API, "K,O,P");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Save intermediate events symbol and labels files; append file prefix [temporary files deleted].\n");
-	gmt_pen_syntax (API->GMT, 'W', "Set symbol outline pen attributes [Default pen is %s]:", 0);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Set symbol outline pen attributes [Default pen is %s]:", 0);
 	GMT_Option (API, "V,bi2,c,di,e,f,h,i,p,:,.");
 	
 	return (GMT_MODULE_USAGE);
@@ -187,7 +188,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSEVENTS_CTRL *Ctrl, struct GM
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0, pos, n_col = 3, k, id;
+	unsigned int n_errors = 0, pos, n_col = 3, k, id = 0;
 	char *c = NULL, txt[GMT_LEN128] = {""}, *t_string = NULL;
 	struct GMT_OPTION *opt = NULL;
 
@@ -297,6 +298,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSEVENTS_CTRL *Ctrl, struct GM
 						c[0] = '0';
 						Ctrl->S.symbol = strdup (opt->arg);
 						c[0] = '/';
+						GMT->current.setting.proj_length_unit = GMT_INCH;	/* Since S.size is now in inches */
 					}
 					else {	/* Gave no size so get the whole thing and read size from file */
 						Ctrl->S.symbol = strdup (opt->arg);
@@ -306,23 +308,24 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSEVENTS_CTRL *Ctrl, struct GM
 				else if (opt->arg[0] == 'E' && opt->arg[1] == '-') {
 					if (opt->arg[2])	/* Gave a fixed size */
 						Ctrl->S.size = atof (&opt->arg[2]);
-					else	/* Must read individual event symbol sizes for file using prevailing length-unit setting*/
+					else	/* Must read individual event symbol sizes for file using prevailing length-unit setting */
 						Ctrl->S.mode = 1;
 					Ctrl->S.symbol = strdup ("E-");
 				}
 				else if (strchr ("-+aAcCdDgGhHiInNsStTxy", opt->arg[0])) {	/* Regular symbols of form <code>[<size>], where <code> is 1-char */
 					if (opt->arg[1] && !strchr (GMT_DIM_UNITS, opt->arg[1])) {	/* Gave a fixed size */
 						Ctrl->S.size = gmt_M_to_inch (GMT, &opt->arg[1]);	/* Now in inches */
-						sprintf (txt, "%c", opt->arg[0]);	/* Just the symbol code */
+						GMT->current.setting.proj_length_unit = GMT_INCH;	/* Since S.size is now in inches */
+						sprintf (txt, "%c", opt->arg[0]);			/* Just the symbol code */
 						Ctrl->S.symbol = strdup (txt);
 					}
-					else if (strchr (GMT_DIM_UNITS, opt->arg[1])) {	/* Must read symbol size in this unit from file */
+					else if (opt->arg[1] && strchr (GMT_DIM_UNITS, opt->arg[1])) {	/* Must read symbol sizes in this unit from file */
 						Ctrl->S.mode = 1;
 						gmt_set_measure_unit (GMT, opt->arg[1]);
 						sprintf (txt, "%c", opt->arg[0]);	/* Just the symbol code */
 						Ctrl->S.symbol = strdup (txt);
 					}
-					else {	/* Must read individual event symbol sizes for file using prevailing length-unit setting*/
+					else {	/* Must read individual event symbol sizes for file using prevailing length-unit setting */
 						Ctrl->S.mode = 1;
 						Ctrl->S.symbol = strdup (opt->arg);
 					}
@@ -379,7 +382,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSEVENTS_CTRL *Ctrl, struct GM
 int GMT_events (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: events\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -419,7 +422,7 @@ int GMT_psevents (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -451,6 +454,8 @@ int GMT_psevents (void *V_API, int mode, void *args) {
 	do {	/* Keep returning records until we reach EOF */
 		if ((In = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Read next record, get NULL if special case */
 			if (gmt_M_rec_is_error (GMT)) {		/* Bail if there are any read errors */
+				if (fp_labels) fclose (fp_labels);
+				if (fp_symbols) fclose (fp_symbols);
 				Return (GMT_RUNTIME_ERROR);
 			}
 			else if (gmt_M_rec_is_eof (GMT)) 	/* Reached end of file */
@@ -489,6 +494,7 @@ int GMT_psevents (void *V_API, int mode, void *args) {
 					sprintf (tmp_file_symbols, "%s/GMT_psevents_symbols_%d.txt", API->tmp_dir, (int)getpid());
 				if ((fp_symbols = fopen (tmp_file_symbols, "w")) == NULL) {
 					GMT_Report (API, GMT_MSG_NORMAL, "Unable to create file %s\n", tmp_file_symbols);
+					if (fp_labels) fclose (fp_labels);
 					Return (GMT_RUNTIME_ERROR);
 				}
 			}
@@ -578,8 +584,8 @@ Do_text:	if (Ctrl->E.active[PSEVENTS_TEXT] && In->text) {	/* Also plot trailing 
 				out[GMT_Z] = 0.0;	/* No transparency during plateau phase */
 			}
 			else if (Ctrl->T.now < t_decay) {	/* We are within the decay phase */
-				x = pow ((t_decay - Ctrl->T.now)/Ctrl->E.dt[PSEVENTS_TEXT][PSEVENTS_DECAY], 2.0);	/* Quadratic function that goes from 1 to 0 */
-				out[GMT_Z] = 0.0;	/* No transparency during plateau phase */
+				//x = pow ((t_decay - Ctrl->T.now)/Ctrl->E.dt[PSEVENTS_TEXT][PSEVENTS_DECAY], 2.0);	/* Quadratic function that goes from 1 to 0 */
+				out[GMT_Z] = 0.0;	/* No transparency during decay phase */
 			}
 			else if (!do_coda && Ctrl->T.now < t_end) {	/* We are within the normal display phase with nominal symbol size */
 				out[GMT_Z] = 0.0;	/* No transparency during plateau phase */
@@ -597,11 +603,16 @@ Do_text:	if (Ctrl->E.active[PSEVENTS_TEXT] && In->text) {	/* Also plot trailing 
 	} while (true);
 	
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_NOERROR) {	/* Disables further data input */
+		if (fp_symbols) fclose (fp_symbols);
+		if (fp_labels) fclose (fp_labels);
 		Return (API->error);
 	}
-	if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), ""))	/* Set up map projection */
+	if (gmt_M_err_pass (GMT, gmt_map_setup (GMT, GMT->common.R.wesn), "")) {	/* Set up map projection */
+		if (fp_symbols) fclose (fp_symbols);
+		if (fp_labels) fclose (fp_labels);
 		Return (GMT_PROJECTION_ERROR);
-
+	}
+	
 	if ((PSL = gmt_plotinit (GMT, options)) == NULL) Return (GMT_RUNTIME_ERROR);
 	gmt_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
 
@@ -612,17 +623,19 @@ Do_text:	if (Ctrl->E.active[PSEVENTS_TEXT] && In->text) {	/* Also plot trailing 
 		fclose (fp_symbols);	/* First close the file so symbol output is flushed */
 		/* Build psxy command with fixed options and those that depend on -C -G -W.
 		 * We must set symbol unit as inch since we are passing sizes in inches directly (dimensions are in inches internally in GMT).  */
-		sprintf (cmd, "%s -R -J -O -K -I -t -S%s --GMT_HISTORY=false --PROJ_LENGTH_UNIT=inch", tmp_file_symbols, Ctrl->S.symbol);
+		sprintf (cmd, "%s -R -J -O -K -I -t -S%s --GMT_HISTORY=false --PROJ_LENGTH_UNIT=%s", tmp_file_symbols, Ctrl->S.symbol, GMT->session.unit_name[GMT->current.setting.proj_length_unit]);
 		if (Ctrl->C.active) {strcat (cmd, " -C"); strcat (cmd, Ctrl->C.file);}
 		if (Ctrl->G.active) {strcat (cmd, " -G"); strcat (cmd, Ctrl->G.color);}
 		if (Ctrl->W.pen) {strcat (cmd, " -W"); strcat (cmd, Ctrl->W.pen);}
 		GMT_Report (API, GMT_MSG_DEBUG, "cmd: gmt psxy %s\n", cmd);
 
 		if (GMT_Call_Module (API, "psxy", GMT_MODULE_CMD, cmd) != GMT_NOERROR) {	/* Plot the symbols */
+			if (fp_labels) fclose (fp_labels);
 			Return (API->error);
 		}
 		if (!Ctrl->Q.active && gmt_remove_file (GMT, tmp_file_symbols)) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Unable to remove file %s\n", tmp_file_symbols);
+			if (fp_labels) fclose (fp_labels);
 			Return (GMT_RUNTIME_ERROR);
 		}
 	}

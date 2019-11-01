@@ -1,5 +1,5 @@
 #
-#	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+#	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
 #	See LICENSE.TXT file for copying and redistribution conditions.
 #
 #	This program is free software; you can redistribute it and/or modify
@@ -11,7 +11,7 @@
 #	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #	GNU Lesser General Public License for more details.
 #
-#	Contact info: gmt.soest.hawaii.edu
+#	Contact info: www.generic-mapping-tools.org
 #-------------------------------------------------------------------------------
 #
 # To configure the cmake process, first copy the configuration template
@@ -72,7 +72,7 @@ include (ConfigCMake)
 # Global test target
 add_custom_target (check
 	COMMAND ${CMAKE_CTEST_COMMAND}
-	--force-new-ctest-process -j${N_TEST_JOBS})
+	--output-on-failure --force-new-ctest-process -j${N_TEST_JOBS})
 
 # Find test dependencies
 find_program (GRAPHICSMAGICK gm)
@@ -82,10 +82,9 @@ if (DO_EXAMPLES OR DO_TESTS AND NOT GRAPHICSMAGICK)
 endif (DO_EXAMPLES OR DO_TESTS AND NOT GRAPHICSMAGICK)
 
 # Add subdirectories
-#set(_manfiles_ps "" CACHE INTERNAL "Global list of PS manpages")
 add_subdirectory (src)
 add_subdirectory (share)      # share must be processed *after* src (GSHHG_PATH)
-add_subdirectory (doc)        # doc must be processed *after* src (PDF manpages)
+add_subdirectory (doc)        # doc must be processed *after* src
 if (EXISTS ${GMT_SOURCE_DIR}/test/)
 	add_subdirectory (test)
 endif (EXISTS ${GMT_SOURCE_DIR}/test/)
@@ -96,17 +95,17 @@ if (GIT_FOUND AND HAVE_GIT_VERSION)
 	# Export git working tree
 	add_custom_target (git_export_release
 		COMMAND ${GIT_EXECUTABLE} -C ${GMT_SOURCE_DIR} checkout-index -a -f --prefix=${GMT_RELEASE_PREFIX}/)
-	# Remove the test dir, so that it is not included in the final release tarball
+	# Remove some directories and files, so that they are not included in the final release tarball
 	add_custom_target (git_prune_dirs
 		COMMAND ${CMAKE_COMMAND} -E remove_directory ${GMT_RELEASE_PREFIX}/.git
 		COMMAND ${CMAKE_COMMAND} -E remove_directory ${GMT_RELEASE_PREFIX}/.github
+		COMMAND ${CMAKE_COMMAND} -E remove_directory ${GMT_RELEASE_PREFIX}/admin
 		COMMAND ${CMAKE_COMMAND} -E remove_directory ${GMT_RELEASE_PREFIX}/ci
 		COMMAND ${CMAKE_COMMAND} -E remove_directory ${GMT_RELEASE_PREFIX}/test)
 	add_custom_target (git_prune_files
 		COMMAND ${CMAKE_COMMAND} -E remove
 			${GMT_RELEASE_PREFIX}/.azure-pipelines.yml
-			${GMT_RELEASE_PREFIX}/.gitignore
-			${GMT_RELEASE_PREFIX}/.travis.yml)
+			${GMT_RELEASE_PREFIX}/.gitignore)
 	add_depend_to_target (git_prune_dirs git_export_release)
 	add_depend_to_target (gmt_release git_prune_dirs)
 	add_depend_to_target (git_prune_files git_export_release)
@@ -117,7 +116,7 @@ if (GIT_FOUND AND HAVE_GIT_VERSION)
 		# Targets for creating tarballs
 		string (REGEX REPLACE ".*/" "" _release_dirname "${GMT_RELEASE_PREFIX}")
 		add_custom_command (OUTPUT ${_release_dirname}-src.tar
-			COMMAND ${GNUTAR} -c --owner 0 --group 0 --mode a=rX,u=rwX
+			COMMAND ${GNUTAR} -c --owner 0 --group 0 --mode a=rX,u=rwX --force-local
 			-f ${GMT_BINARY_DIR}/${_release_dirname}-src.tar ${_release_dirname}
 			DEPENDS ${GMT_RELEASE_PREFIX}
 			WORKING_DIRECTORY ${GMT_RELEASE_PREFIX}/..
@@ -165,12 +164,19 @@ endif (EXTRA_BUILD_DIRS)
 # Configure header file to pass some of the CMake settings to the source code
 configure_file (src/config.h.in src/config.h)
 
+if (GMT_DATA_URL) # Backwards compatibility with old ConfigUser.cmake files
+	set (GMT_DATA_SERVER ${GMT_DATA_URL})
+endif (GMT_DATA_URL)
+
 # Configuration done
 message(
+	"*\n"
+	"*  GMT Version:               : ${GMT_PACKAGE_VERSION_WITH_GIT_REVISION}\n"
+	"*\n"
 	"*  Options:\n"
 	"*  Found GSHHG database       : ${GSHHG_PATH} (${GSHHG_VERSION})\n"
 	"*  Found DCW-GMT database     : ${DCW_PATH}\n"
-	"*  Found GMT data server      : ${GMT_DATA_URL}\n"
+	"*  Found GMT data server      : ${GMT_DATA_SERVER}\n"
 	"*  NetCDF library             : ${NETCDF_LIBRARY}\n"
 	"*  NetCDF include dir         : ${NETCDF_INCLUDE_DIR}\n"
 	"*  Curl library               : ${CURL_LIBRARY}\n"
@@ -189,14 +195,13 @@ message(
 	"*  Triangulation method       : ${GMT_TRIANGULATE}\n"
 	"*  OpenMP support             : ${GMT_CONFIG_OPENMP_MESSAGE}\n"
 	"*  GLIB GTHREAD support       : ${GMT_CONFIG_GTHREAD_MESSAGE}\n"
-	"*  PTHREAD support            : ${GMT_CONFIG_PTHREAD_MESSAGE}\n"
 	"*  Build mode                 : ${BUILD_MODE}\n"
 	"*  Build GMT core             : always \n"
 	"*  Build PSL library          : always \n"
 	"*  Build GMT supplements      : ${SUPPL}\n"
 	"*  Build GMT for developers   : ${DEVEL}\n"
 	"*  Build proto supplements    : ${PROTO}\n"
-	"*  Found GhostScript (gs)     : ${GMT_CONFIG_GS_MESSAGE}\n"
+	"*  Found Ghostscript (gs)     : ${GMT_CONFIG_GS_MESSAGE}\n"
 	"*  Found GraphicsMagick (gm)  : ${GMT_CONFIG_GM_MESSAGE}\n"
 	"*  Found ffmpeg               : ${GMT_CONFIG_FFMPEG_MESSAGE}\n"
 	"*  Found open                 : ${GMT_CONFIG_OPEN_MESSAGE}\n"

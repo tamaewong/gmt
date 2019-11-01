@@ -1,12 +1,11 @@
 .. index:: ! gmtconvert
+.. include:: module_core_purpose.rst_
 
-*******
-convert
-*******
+**********
+gmtconvert
+**********
 
-.. only:: not man
-
-    Convert, Paste, and/or Extract columns from data tables
+|gmtconvert_purpose|
 
 Synopsis
 --------
@@ -24,7 +23,7 @@ Synopsis
 [ |-T|\ [**h**\ \|\ **d**\ ] ]
 [ |SYN_OPT-V| ]
 [ |-W|\ [**+n**\ ] ]
-[ |-Z|\ [*first*\ ][:*last*] ]
+[ |-Z|\ [*first*\ ][/\ *last*] ]
 [ |SYN_OPT-a| ]
 [ |SYN_OPT-b| ]
 [ |SYN_OPT-d| ]
@@ -53,7 +52,7 @@ list segment headers and no data records, (6) extract first and/or last
 data record for each segment, (7) reverse the order of items on output,
 (8) output only ranges of segment numbers, and (9) output only segments
 whose record count matches criteria.  Input (and hence output) may have multiple
-sub-headers, and ASCII tables may have regular headers as well. 
+sub-headers, and ASCII tables may have regular headers as well.
 
 Required Arguments
 ------------------
@@ -196,7 +195,7 @@ Optional Arguments
 **-T**\ [**h**\ \|\ **d**\ ]
     Suppress the writing of certain records on output.  Append **h** to
     suppress segment headers [Default] or **d** to suppress duplicate
-    data records.  Use **-Thd** to suppress both types of records. 
+    data records.  Use **-Thd** to suppress both types of records.
 
 .. _-V:
 
@@ -206,13 +205,13 @@ Optional Arguments
 .. _-W:
 
 **-W** [**+n**\ ]
-    Attempt to convert each word in the trialing text to a number and append
+    Attempt to convert each word in the trailing text to a number and append
     such values to the numerical output columns.  Text that cannot be converted
     (because they are not numbers) will appear as NaNs.  Use modifier **+n** to
     exclude the columns with NaNs.  Note: These columns are identified based on
     the first input record only.
 
-**-Z** [*first*\ ][:*last*]
+**-Z** [*first*\ ][/\ *last*]
     Limit output to the specified record range.  If *first* is not set it defaults
     to record 0 (very first record) and if *last* is not set then it defaults to the
     very last record.  Only records in the given range will be written out [all].
@@ -256,6 +255,8 @@ Optional Arguments
 Examples
 --------
 
+.. include:: explain_example.rst_
+
 To convert the binary file test.b (single precision) with 4 columns to ASCII:
 
    ::
@@ -272,7 +273,7 @@ You have an ASCII table with 6 columns and you want to plot column 5 versus colu
 
    ::
 
-    gmt convert table.txt -o5,0 | plot ...
+    gmt convert table.txt -o5,0 | gmt plot ...
 
 If the file instead is the binary file results.b which has 9
 single-precision values per record, we extract the last column and
@@ -280,14 +281,14 @@ columns 4-6 and write ASCII with the command
 
    ::
 
-    gmt convert results.b -o8,4-6 -bi9s | plot ...
+    gmt convert results.b -o8,4-6 -bi9s | gmt plot ...
 
 You want to plot the 2nd column of a 2-column file left.txt versus the
 first column of a file right.txt:
 
    ::
 
-    gmt convert left.txt right.txt -A -o1,2 | plot ...
+    gmt convert left.txt right.txt -A -o1,2 | gmt plot ...
 
 To extract all segments in the file big_file.txt whose headers contain
 the string "RIDGE AXIS", try

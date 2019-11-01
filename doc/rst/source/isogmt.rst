@@ -6,7 +6,7 @@ isogmt
 
 .. only:: not man
 
-    isogmt - Run GMT command or script in isolation mode
+    isogmt - Run GMT command or script in isolation mode [classic mode only]
 
 Synopsis
 --------
@@ -27,13 +27,11 @@ variable GMT_TMPDIR.
 Examples
 --------
 
-Run the shell script *script.gmt* in isolation mode
-
-  ::
+Run the shell script *script.gmt* in isolation mode::
 
     isogmt sh script.gmt
 
-`See Also <#toc4>`_
--------------------
+See Also
+--------
 
 :doc:`gmt`, :doc:`gmt.conf`

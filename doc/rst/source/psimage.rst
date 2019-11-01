@@ -1,19 +1,18 @@
 .. index:: ! psimage
+.. include:: module_core_purpose.rst_
 
 *******
 psimage
 *******
 
-.. only:: not man
-
-    Place images or EPS files on maps
+|psimage_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**psimage** *imagefile*
+**gmt psimage** *imagefile*
 [ |SYN_OPT-B| ]
 [ |-D|\ *refpoint* ]
 [ |-F|\ *box* ]
@@ -39,6 +38,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To plot the image logo.jpg, scaling it be 1 inch wide (height is scaled
 accordingly), and outline with a thin, blue pen, use

@@ -1,19 +1,18 @@
 .. index:: ! pssegyz
+.. include:: ../module_supplements_purpose.rst_
 
 *******
 pssegyz
 *******
 
-.. only:: not man
-
-    pssegyz - Create imagemasked postscript from SEGY file
+|pssegyz_purpose|
 
 Synopsis
 --------
 
 .. include:: ../../common_SYN_OPTs.rst_
 
-**pssegyz** *SEGYfile* |-J|\ *parameters*
+**gmt pssegyz** *SEGYfile* |-J|\ *parameters*
 |-J|\ **z**\ \|\ **Z**\ *parameters*
 |SYN_OPT-Rz|
 |-D|\ *deviation* |-F|\ [*color*] **-W**

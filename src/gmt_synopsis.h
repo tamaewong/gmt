@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Contains macros for presenting variations of GMT common options in program
@@ -72,8 +72,10 @@
 #define GMT_TROSE_DIR	GMT_XYANCHOR "+w<width>[+f[<level>]]" GMT_JUSTIFY "[+l<w,e,s,n>]" GMT_OFFSET
 #define GMT_TROSE_MAG	GMT_XYANCHOR "+w<width>[+d[<dec>[/<dlabel>]]][+i<pen>]" GMT_JUSTIFY "[+l<w,e,s,n>][+p<pen>][+t<ints>]" GMT_OFFSET
 #define GMT_SCALE	GMT_XYANCHOR "+c[<slon>/]<slat>+w<length>[e|f|M|n|k|u][+a<align>][+f]" GMT_JUSTIFY "[+l[<label>]]" GMT_OFFSET "[+u]"
-#define GMT_INSET_A	GMT_XYANCHOR "+w<width>[<unit>][/<height>[<unit>]]" GMT_JUSTIFY GMT_OFFSET "[+s<file>][+t]"
-#define GMT_INSET_B	"<xmin>/<xmax>/<ymin>/<ymax>[+r][+s<file>][+t][+u<unit>]"
+#define GMT_INSET_A	GMT_XYANCHOR "+w<width>[<unit>][/<height>[<unit>]]" GMT_JUSTIFY GMT_OFFSET
+#define GMT_INSET_B	"<xmin>/<xmax>/<ymin>/<ymax>[+r][+u<unit>]"
+#define GMT_INSET_A_CL	GMT_XYANCHOR "+w<width>[<unit>][/<height>[<unit>]]" GMT_JUSTIFY GMT_OFFSET "[+s<file>][+t]"
+#define GMT_INSET_B_CL	"<xmin>/<xmax>/<ymin>/<ymax>[+r][+s<file>][+t][+u<unit>]"
 
 /* Options for background panel, used in gmtlogo, psimage, pslegend and psscale */
 
@@ -109,10 +111,11 @@
 #define GMT_f_OPT	"-f[i|o]<info>"
 #define GMT_g_OPT	"-g[a]x|y|d|X|Y|D|[<col>]z<gap>[<unit>][+n|p]"
 #define GMT_h_OPT	"-h[i|o][<nrecs>][+c][+d][+r<remark>][+t<title>]"
-#define GMT_i_OPT	"-i<cols>[+l][+s<scale>][+o<offset>][,...]"
+#define GMT_i_OPT	"-i<cols>[+l][+s<scale>][+o<offset>][,...][,t[<word>]]"
 #define GMT_j_OPT	"-je|f|g"
+#define GMT_l_OPT	"-l<label>[<mods>]"
 #define GMT_n_OPT	"-n[b|c|l|n][+a][+b<BC>][+c][+t<threshold>]"
-#define GMT_o_OPT	"-o<cols>[,...]"
+#define GMT_o_OPT	"-o<cols>[,...][t[<word>]]"
 #define GMT_p_OPT	"-p[x|y|z]<azim>[/<elev>[/<zlevel>]][+w<lon0>/<lat0>[/<z0>][+v<x0>/<y0>]"
 #define GMT_r_OPT	"-r[g|p]"
 #define GMT_s_OPT	"-s[<cols>][+a|r]"

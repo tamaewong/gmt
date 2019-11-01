@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Author:	Paul Wessel
@@ -26,7 +26,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"grdcontour"
+#define THIS_MODULE_CLASSIC_NAME	"grdcontour"
+#define THIS_MODULE_MODERN_NAME	"grdcontour"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Make contour map using a grid"
 #define THIS_MODULE_KEYS	"<G{,AD)=t,CC(,DDD,>X},G?(=1@<G{,AD)=t,CC(,DD),G?(=1"
@@ -176,10 +177,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 
 	/* This displays the grdcontour synopsis and optionally full usage information */
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <grid> [-A[-|[+]<int>|<list>][<labelinfo>] [%s] [-C<contours>] [%s]\n", name, GMT_B_OPT, GMT_J_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-D<template>] [-F[l|r]] [%s] %s [-L<low>/<high>|n|N|P|p]\n", GMT_CONTG, API->K_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[-D<template>] [-F[l|r]] [%s] %s[-L<low>/<high>|n|N|P|p]\n", GMT_CONTG, API->K_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-N[<cpt>]] %s%s[-Q[<cut>[<unit>]][+z]] [%s]\n", API->O_OPT, API->P_OPT, GMT_Rgeoz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-S<smooth>] [%s]\n", GMT_CONTT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-W[a|c]<pen>[+c[l|f]]]\n\t[%s] [%s] [-Z[+s<fact>][+o<shift>][+p]\n",
@@ -200,7 +201,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   <labelinfo> controls the specifics of the labels.  Choose from:\n");
 	gmt_label_syntax (API->GMT, 5, 0);
 	GMT_Option (API, "B-");
-	GMT_Message (API, GMT_TIME_NONE, "\t-C Contours to be drawn can be specified in one of three ways:\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t-C Contours to be drawn can be specified in one of four ways:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   1. Fixed contour interval.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   2. Comma-separated contours (for single contour append comma to be seen as list).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   3. File with contour levels in col 1 and C(ont) or A(nnot) in col 2\n");
@@ -247,10 +248,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	                                 TICKED_SPACING, TICKED_LENGTH);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append +lXY (or +l\"low,high\") to place X and Y (or low and high) at the center\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   of local lows and highs.  If no labels are given we default to - and +.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If two characters are passed (e.g., +lLH) we use the as L and H.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   If two characters are passed (e.g., +lLH) we place them at local lows and highs.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   For string labels, simply give two strings separated by a comma (e.g., +llo,hi).\n");
 	GMT_Option (API, "U,V");
-	gmt_pen_syntax (API->GMT, 'W', "Set pen attributes. Append a<pen> for annotated or (default) c<pen> for regular contours", 0);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Set pen attributes. Append a<pen> for annotated or (default) c<pen> for regular contours", 0);
 	GMT_Message (API, GMT_TIME_NONE, "\t   The default pen settings are\n");
 	P = API->GMT->current.setting.map_default_pen;
 	GMT_Message (API, GMT_TIME_NONE, "\t   Contour pen:  %s.\n", gmt_putpen (API->GMT, &P));
@@ -565,7 +566,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, struct 
 			case 'W':	/* Pen settings */
 				Ctrl->W.active = true;
 				k = reset = 0;
-				if (opt->arg[0] == '-' || (opt->arg[0] == '+' && opt->arg[1] != 'c')) {	/* Definitively old-style args */
+				if ((opt->arg[0] == '-' && opt->arg[1]) || (opt->arg[0] == '+' && opt->arg[1] != 'c')) {	/* Definitively old-style args */
 					if (opt->arg[k] == '+') Ctrl->W.cptmode = 1, k++;
 					if (opt->arg[k] == '-') Ctrl->W.cptmode = 3, k++;
 					j = (opt->arg[k] == 'a' || opt->arg[k] == 'c') ? k+1 : k;
@@ -586,7 +587,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, struct 
 				}
 				if (j == k && opt->arg[j]) {	/* Set both and gave argument */
 					if (gmt_getpen (GMT, &opt->arg[j], &Ctrl->W.pen[0])) {
-						gmt_pen_syntax (GMT, 'W', " ", 0);
+						gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 						n_errors++;
 					}
 					else
@@ -600,7 +601,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct GRDCONTOUR_CTRL *Ctrl, struct 
 					if (gmt_colorname2index (GMT, txt_a) >= 0) j = k;	/* Found a colorname; wind j back by 1 */
 					id = (opt->arg[k] == 'a') ? 1 : 0;
 					if (gmt_getpen (GMT, &opt->arg[j], &Ctrl->W.pen[id])) {
-						gmt_pen_syntax (GMT, 'W', " ", 0);
+						gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 						n_errors++;
 					}
 					if (j == k) Ctrl->W.pen[1] = Ctrl->W.pen[0];	/* Must copy since it was not -Wc nor -Wa after all */
@@ -833,6 +834,8 @@ GMT_LOCAL void grd_sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *P
 	 * One idea would be to add help points to include the pole and used this polygon to compute where to
 	 * plot the label but then skip those points when drawing the line. */
 
+	PSL_settextmode (PSL, PSL_TXTMODE_MINUS);	/* Replace hyphens with minus signs */
+
 	for (pol = 0; tick_label && pol < n; pol++) {	/* Finally, do labels */
 		if (!save[pol].do_it) continue;
 		if (abs (save[pol].kind) == 2 && gmt_M_is_azimuthal (GMT)) {	/* Only plot once at mean location */
@@ -859,6 +862,8 @@ GMT_LOCAL void grd_sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *P
 			if (mode & 2) gmt_add_label_record (GMT, T, save[pol].xlabel, save[pol].ylabel, 0.0, lbl[save[pol].high]);
 		}
 	}
+	
+	PSL_settextmode (PSL, PSL_TXTMODE_HYPHEN);	/* Back to leave as is */
 	PSL_comment (PSL, "End Embellishment of innermost contours\n");
 }
 
@@ -944,7 +949,7 @@ GMT_LOCAL enum grdcontour_contour_type gmt_is_closed (struct GMT_CTRL *GMT, stru
 GMT_LOCAL void embed_quotes (char *orig, char *dup) {
 	/* Add quotes around text strings with spaces in a -B option where the quotes have been lost.
 	 * Because the original quotes are gone there is no way to detect things like ...+t"Title with+u in it"
-	 * since now it is just +tTitle with+u in it and thre is no way to distinguish the two possibilities
+	 * since now it is just +tTitle with+u in it and there is no way to distinguish the two possibilities
 	 * +t"Title with"+u" in it" from +t"Title with +u in it".  We insist that +<code> must not have a space
 	 * before the <code> in order to be a modifier.  This will catch things like +t"Title with +u in it" and
 	 * treat the +u as part of the text.
@@ -1145,7 +1150,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 	
 	/* NOT -N, so parse the command-line arguments as a normal module would */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -1329,6 +1334,7 @@ int GMT_grdcontour (void *V_API, int mode, void *args) {
 		}
 		if (Ctrl->C.file && strchr (Ctrl->C.file, ',') && (zc = gmt_list_to_array (GMT, Ctrl->C.file, gmt_M_type (GMT, GMT_IN, GMT_Z), &nc)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error parsing regular contours from list %s\n", Ctrl->C.file);
+			if (za) gmt_M_free (GMT, za);
 			Return (GMT_RUNTIME_ERROR);
 		}
 		n_tmp = 0;

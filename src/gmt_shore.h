@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Include file for gmt_shore.c
@@ -56,6 +56,7 @@ enum gmt_enum_gshhs {GSHHS_MAX_DELTA = 65535,	/* Largest value to store in a uns
 	GSHHS_ANTARCTICA_SKIP		= 4,	/* Skip Antarctica coastlines */
 	GSHHS_ANTARCTICA_SKIP_INV	= 8,	/* Skip everything BUT Antarctica coastlines */
 	GSHHS_ANTARCTICA_ICE_ID		= 4,	/* The GSHHG ID of the Antarctica ice-coastline polygon */
+	GSHHS_ANTARCTICA_GROUND_ID	= 5,	/* The GSHHG ID of the Antarctica grounding-coastline polygon */
 	GSHHS_ANTARCTICA_LIMIT		= -60};	/* Data below 60S is Antarctica */
 
 struct GMT_SHORE_SELECT {	/* Information on levels and min area to use */

@@ -1,12 +1,11 @@
 .. index:: ! gravfft
+.. include:: ../module_supplements_purpose.rst_
 
 *******
 gravfft
 *******
 
-.. only:: not man
-
-    gravfft - Spectral calculations of gravity, isostasy, admittance, and coherence for grids
+|gravfft_purpose|
 
 Synopsis
 --------
@@ -18,7 +17,7 @@ Synopsis
 [ |-D|\ *density*\ \|\ *rhogrid* ]
 [ |-E|\ *n_terms* ]
 [ |-F|\ [**f**\ [**+s**]\ \|\ **b**\ \|\ **g**\ \|\ **v**\ \|\ **n**\ \|\ **e**] ]
-[ |-I|\ **w**\ \|\ **b**\ \|\ **c**\ \|\ **t** \|\ **k** ]
+[ |-I|\ **w**\ \|\ **b**\ \|\ **c**\ \|\ **t**\ \|\ **k** ]
 [ |-N|\ *params* ]
 [ |-Q| ]
 [ |-T|\ *te/rl/rm/rw*\ [*/ri*]\ [**+m**] ]
@@ -121,7 +120,7 @@ Optional Arguments
 
 .. _-I:
 
-**-I**\ **w**\ \|\ **b**\ \|\ **c**\ \|\ **t** \|\ **k**
+**-I**\ **w**\ \|\ **b**\ \|\ **c**\ \|\ **t**\ \|\ **k**
     Use *ingrd2* and *ingrd1* (a grid with topography/bathymetry) to estimate admittance\|coherence and
     write it to stdout (**-G** ignored if set). This grid should contain
     gravity or geoid for the same region of *ingrd1*. Default

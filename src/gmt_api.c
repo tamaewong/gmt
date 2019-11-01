@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Public functions for the GMT C/C++ API.  The API consist of functions
@@ -613,8 +613,74 @@ GMT_LOCAL void api_set_object (struct GMTAPI_CTRL *API, struct GMTAPI_DATA_OBJEC
 }
 #endif
 
+GMT_LOCAL void gmtapi_check_for_modern_oneliner (struct GMTAPI_CTRL *API, const char *module, int mode, void *args) {
+	/* Determine if user is attempting a modern mode one-liner plot, and if so, set run mode to GMT_MODERN.
+	 * This is needed since there is not gmt begin | end sequence in this case.
+	 * Also, if a user wants to get the usage message for a modern mode module then it is also a type
+	 * of one-liner and thus we set to GMT_MODERN as well, but only for modern module names. */
+	
+	unsigned modern = 0, pos;
+	char format[GMT_LEN128] = {""}, p[GMT_LEN16] = {""}, *c = NULL;
+	bool usage = false;
+	size_t len;
+	struct GMT_OPTION *opt = NULL, *head = NULL;
 
-/* This was our effort to get PPID under Windows.  Remains as comments for now */
+	if (API->GMT->current.setting.run_mode == GMT_MODERN) {	/* Just need to check if a classic name was given... */
+		if (!strncmp (module, "ps", 2U) && strncmp (module, "psconvert", 9U)) {	/* Gave classic ps* name in modern mode but not psconvert */
+			char not_used[GMT_LEN32] = {""};
+			const char *mod_name = gmt_current_name (module, not_used);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Detected a classic module name (%s) in modern mode - please use the modern mode name %s instead.\n", module, mod_name);
+		}
+		return;	/* Done, since we know it is a modern mode session */
+	}
+	
+	head = GMT_Create_Options (API, mode, args);	/* Get option list */
+	
+	API->GMT->current.setting.use_modern_name = gmtlib_is_modern_name (API, module);
+	
+	if (API->GMT->current.setting.use_modern_name) {	/* Make some checks needed to handle synopsis and usage messages in classic vs modern mode */
+		if (head == NULL) {	/* Gave none or a single argument */
+			if (API->GMT->current.setting.run_mode == GMT_CLASSIC)
+				API->usage = true;	/* Modern mode name given with no args so not yet in modern mode - allow it to get usage */
+			return;
+		}
+		if (head->next == NULL) {	/* Gave a single argument */
+			if (head->option == GMT_OPT_USAGE || head->option == GMT_OPT_SYNOPSIS) modern = 1;
+			if (modern) usage = true;
+		}
+	}
+	
+	/* Finally, must check if a one-liner with special graphics format settings were given, e.g., "gmt pscoast -Rg -JH0/15c -Gred -png map" */
+	for (opt = head; opt; opt = opt->next) {
+		if (opt->option == GMT_OPT_INFILE || opt->option == GMT_OPT_OUTFILE) continue;	/* Skip file names */
+		if (strchr ("bejpPt", opt->option) == NULL) continue;	/* Option not the first letter of a valid graphics format [UPDATE LIST IF ADDING MORE FORMATS IN FUTURE] */
+		if ((len = strlen (opt->arg)) == 0 || len >= GMT_LEN128) continue;	/* No arg or very long args that are filenames can be skipped */
+		snprintf (format, GMT_LEN128, "%c%s", opt->option, opt->arg);	/* Get a local copy so we can mess with it */
+		if ((c = strchr (format, ','))) c[0] = 0;	/* Chop off other formats for the initial id test */
+		if (gmt_get_graphics_id (API->GMT, format) != GMT_NOTSET) {	/* Found a valid graphics format option */
+			modern = 1;	/* Seems like it is, but check the rest of the formats, if there are more */
+			if (c == NULL) continue;	/* Nothing else to check, go to next option */
+			/* Make sure any other formats are valid, too */
+			if (c) c[0] = ',';	/* Restore any comma we found */
+			pos = 0;
+			while (modern && gmt_strtok (format, ",", &pos, p)) {	/* Check each format to make sure each is OK */
+				if (gmt_get_graphics_id (API->GMT, p) == GMT_NOTSET)	/* Oh, something wrong was given, cannot be modern */
+					modern = 0;
+			}
+		}
+	}
+	if (modern) {	/* This is indeed a modern mode one-liner command */
+		API->GMT->current.setting.run_mode = GMT_MODERN;
+		API->usage = usage;
+	}
+	if (API->GMT->current.setting.run_mode == GMT_MODERN)	/* If running in modern mode we want to use modern names */
+		API->GMT->current.setting.use_modern_name = true;
+
+	if (GMT_Destroy_Options (API, &head))	/* Done with these here */
+		GMT_Report (API, GMT_MSG_NORMAL, "Unable to free options in gmtapi_check_for_modern_oneliner?\n");
+}
+
+/* Function to get PPID under Windows is a bit different */
 #ifdef _WIN32
 #include <TlHelp32.h>
 int winppid (int pidin) {
@@ -662,7 +728,7 @@ GMT_LOCAL char * api_get_ppid (struct GMTAPI_CTRL *API) {
 	int ppid = -1;
 	unsigned int k = 0;
 	static char *source[4] = {"GMT_SESSION_NAME", "parent", "app", "hardwired choice"};
-	char *str = NULL, string[8];
+	char *str = NULL, string[GMT_LEN8];
 	if ((str = getenv ("GMT_SESSION_NAME")) != NULL) {	/* GMT_SESSION_NAME was set in the environment */
 		char *tmp = strdup (str);	/* Duplicate the given string */
 		GMT_Report (API, GMT_MSG_DEBUG, "Obtained GMT_SESSION_NAME from the environment: %s\n", str);
@@ -695,7 +761,7 @@ GMT_LOCAL char * api_get_ppid (struct GMTAPI_CTRL *API) {
 		ppid = getppid(), k = 1; /* parent process id */
 #endif
 	GMT_Report (API, GMT_MSG_DEBUG, "Obtained the ppid from %s: %d\n", source[k], ppid);
-	sprintf (string, "%d", ppid);
+	snprintf (string, GMT_LEN8, "%d", ppid);
 	return (strdup (string));
 }
 
@@ -719,7 +785,7 @@ GMT_LOCAL int api_init_sharedlibs (struct GMTAPI_CTRL *API) {
 	 * We can now determine how many shared libraries and plugins to consider, and open the core lib */
 	struct GMT_CTRL *GMT = API->GMT;
 	unsigned int n_custom_libs = 0, k, e, n_alloc = GMT_TINY_CHUNK;
-	char text[GMT_LEN256] = {""}, plugindir[GMT_LEN256] = {""}, path[GMT_LEN256] = {""};
+	char text[PATH_MAX] = {""}, plugindir[PATH_MAX] = {""}, path[PATH_MAX] = {""};
 	char *libname = NULL, **list = NULL;
 #ifdef WIN32
 	char *extension[1] = {".dll"};
@@ -766,7 +832,7 @@ GMT_LOCAL int api_init_sharedlibs (struct GMTAPI_CTRL *API) {
 #ifdef SUPPORT_EXEC_IN_BINARY_DIR
 		if ( running_in_bindir_src && access (GMT_BINARY_DIR_SRC_DEBUG "/plugins", R_OK|X_OK) == 0 ) {
 			/* Running in build dir: search plugins in build-dir/src/plugins */
-			strncat (plugindir, GMT_BINARY_DIR_SRC_DEBUG "/plugins", GMT_LEN256-1);
+			strncat (plugindir, GMT_BINARY_DIR_SRC_DEBUG "/plugins", PATH_MAX-1);
 #ifdef XCODER
 			strcat (plugindir, "/Debug");	/* The Xcode plugin path for Debug */
 #endif
@@ -775,13 +841,13 @@ GMT_LOCAL int api_init_sharedlibs (struct GMTAPI_CTRL *API) {
 #endif
 		{
 		/* Set full path to the core library */
-		snprintf (plugindir, GMT_LEN256, "%s/%s", GMT->init.runtime_libdir, GMT_CORE_LIB_NAME);
+		snprintf (plugindir, PATH_MAX, "%s/%s", GMT->init.runtime_libdir, GMT_CORE_LIB_NAME);
 		if (!GMT->init.runtime_library) GMT->init.runtime_library = strdup (plugindir);
 
 #ifdef WIN32
-			snprintf (plugindir, GMT_LEN256, "%s/gmt_plugins", GMT->init.runtime_libdir);	/* Generate the Win standard plugins path */
+			snprintf (plugindir, PATH_MAX, "%s/gmt_plugins", GMT->init.runtime_libdir);	/* Generate the Win standard plugins path */
 #else
-			snprintf (plugindir, GMT_LEN256, "%s/gmt" GMT_INSTALL_NAME_SUFFIX "/plugins", GMT->init.runtime_libdir);	/* Generate the *nix standard plugins path */
+			snprintf (plugindir, PATH_MAX, "%s/gmt" GMT_INSTALL_NAME_SUFFIX "/plugins", GMT->init.runtime_libdir);	/* Generate the *nix standard plugins path */
 #endif
 		}
 		if (!GMT->init.runtime_plugindir) GMT->init.runtime_plugindir = strdup (plugindir);
@@ -792,7 +858,7 @@ GMT_LOCAL int api_init_sharedlibs (struct GMTAPI_CTRL *API) {
 				if (list[k] && k) gmt_M_charp_swap (list[0], list[k]);	/* Put supplements first if not first already */
 				k = 0;
 				while (list[k]) {
-					snprintf (path, GMT_LEN256, "%s/%s", plugindir, list[k]);
+					snprintf (path, PATH_MAX, "%s/%s", plugindir, list[k]);
 					if (access (path, R_OK))
 						GMT_Report (API, GMT_MSG_NORMAL, "Shared Library %s cannot be found or read!\n", path);
 					else {
@@ -825,7 +891,7 @@ GMT_LOCAL int api_init_sharedlibs (struct GMTAPI_CTRL *API) {
 				if ((list = gmtlib_get_dir_list (GMT, plugindir, extension[e]))) {	/* Add these to the libs */
 					k = 0;
 					while (list[k]) {
-						snprintf (path, GMT_LEN256, "%s/%s", plugindir, list[k]);
+						snprintf (path, PATH_MAX, "%s/%s", plugindir, list[k]);
 						if (access (path, R_OK)) {
 							GMT_Report (API, GMT_MSG_NORMAL, "Shared Library %s cannot be found or read!\n", path);
 							GMT_Report (API, GMT_MSG_NORMAL, "Check that your GMT_CUSTOM_LIBS (in gmt.conf, perhaps) is correct\n");
@@ -2171,7 +2237,7 @@ GMT_LOCAL int api_next_io_source (struct GMTAPI_CTRL *API, unsigned int directio
 				return (GMT_ERROR_ON_FOPEN);
 			}
 			S_obj->close_file = true;	/* We do want to close files we are opening, but later */
-			strncpy (GMT->current.io.filename[direction], &(S_obj->filename[first]), GMT_BUFSIZ-1);
+			strncpy (GMT->current.io.filename[direction], &(S_obj->filename[first]), PATH_MAX-1);
 			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "%s %s %s file %s\n",
 				operation[direction+first], GMT_family[S_obj->family], dir[direction], &(S_obj->filename[first]));
 			if (gmt_M_binary_header (GMT, direction)) {
@@ -2187,7 +2253,7 @@ GMT_LOCAL int api_next_io_source (struct GMTAPI_CTRL *API, unsigned int directio
 				gmt_setmode (GMT, (int)direction);	/* Windows may need to have its read mode changed from text to binary */
 #endif
 			kind = (S_obj->fp == GMT->session.std[direction]) ? 0 : 1;	/* For message only: 0 if stdin/out, 1 otherwise for user pointer */
-			snprintf (GMT->current.io.filename[direction], GMT_BUFSIZ, "<%s %s>", GMT_stream[kind], GMT_direction[direction]);
+			snprintf (GMT->current.io.filename[direction], PATH_MAX-1, "<%s %s>", GMT_stream[kind], GMT_direction[direction]);
 			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "%s %s %s %s %s stream\n",
 				operation[direction], GMT_family[S_obj->family], dir[direction], GMT_stream[kind], GMT_direction[direction]);
 			if (gmt_M_binary_header (GMT, direction)) {
@@ -2205,7 +2271,7 @@ GMT_LOCAL int api_next_io_source (struct GMTAPI_CTRL *API, unsigned int directio
 			}
 			S_obj->method = S_obj->method - GMT_IS_FDESC + GMT_IS_STREAM;	/* Since fp now holds stream pointer an we have lost the handle */
 			kind = (S_obj->fp == GMT->session.std[direction]) ? 0 : 1;	/* For message only: 0 if stdin/out, 1 otherwise for user pointer */
-			snprintf (GMT->current.io.filename[direction], GMT_BUFSIZ, "<%s %s>", GMT_stream[kind], GMT_direction[direction]);
+			snprintf (GMT->current.io.filename[direction], PATH_MAX-1, "<%s %s>", GMT_stream[kind], GMT_direction[direction]);
 			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "%s %s %s %s %s stream via supplied file descriptor\n",
 				operation[direction], GMT_family[S_obj->family], dir[direction], GMT_stream[kind], GMT_direction[direction]);
 			if (gmt_M_binary_header (GMT, direction)) {
@@ -2869,7 +2935,7 @@ GMT_LOCAL struct GMT_MATRIX *api_read_matrix (struct GMT_CTRL *GMT, void *source
 	bool close_file = false, first = true, add_first_segheader = false;
 	int error = 0;
 	uint64_t row = 0, col, ij, dim[4] = {0, 0, 0, GMT->current.setting.export_type};
-	char M_file[GMT_BUFSIZ] = {""};
+	char M_file[PATH_MAX] = {""};
 	char line[GMT_BUFSIZ] = {""};
 	FILE *fp = NULL;
 	struct GMT_MATRIX *M = NULL;
@@ -2880,7 +2946,7 @@ GMT_LOCAL struct GMT_MATRIX *api_read_matrix (struct GMT_CTRL *GMT, void *source
 	if (src_type == GMT_IS_FILE && !source) src_type = GMT_IS_STREAM;	/* No filename given, default to stdin */
 
 	if (src_type == GMT_IS_FILE) {	/* dest is a file name */
-		strncpy (M_file, source, GMT_BUFSIZ-1);
+		strncpy (M_file, source, PATH_MAX-1);
 		if ((fp = gmt_fopen (GMT, M_file, GMT->current.io.r_mode)) == NULL) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Cannot open Matrix file %s\n", M_file);
 			return_null (GMT->parent, GMT_ERROR_ON_FOPEN);
@@ -3035,7 +3101,7 @@ GMT_LOCAL int api_write_matrix (struct GMT_CTRL *GMT, void *dest, unsigned int d
 	bool close_file = false, append = false;
 	uint64_t row, col, ij;
 	unsigned int hdr;
-	char M_file[GMT_BUFSIZ] = {""};
+	char M_file[PATH_MAX] = {""};
 	static char *msg1[2] = {"Writing", "Appending"};
 	FILE *fp = NULL;
 	p_func_uint64_t GMT_2D_to_index = NULL;
@@ -3046,7 +3112,7 @@ GMT_LOCAL int api_write_matrix (struct GMT_CTRL *GMT, void *dest, unsigned int d
 
 	if (dest_type == GMT_IS_FILE) {	/* dest is a file name */
 		static char *msg2[2] = {"create", "append to"};
-		strncpy (M_file, dest, GMT_BUFSIZ-1);
+		strncpy (M_file, dest, PATH_MAX-1);
 		append = (M_file[0] == '>');	/* Want to append to existing file */
 		if ((fp = fopen (&M_file[append], (append) ? "a" : "w")) == NULL) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Cannot %s Matrix file %s\n", msg2[append], &M_file[append]);
@@ -3171,7 +3237,7 @@ GMT_LOCAL int api_write_vector (struct GMT_CTRL *GMT, void *dest, unsigned int d
 	bool close_file = false, append = false;
 	uint64_t row, col;
 	unsigned int hdr;
-	char V_file[GMT_BUFSIZ] = {""};
+	char V_file[PATH_MAX] = {""};
 	static char *msg1[2] = {"Writing", "Appending"};
 	FILE *fp = NULL;
 	GMT_getfunction *api_get_val = NULL;
@@ -3185,7 +3251,7 @@ GMT_LOCAL int api_write_vector (struct GMT_CTRL *GMT, void *dest, unsigned int d
 
 	if (dest_type == GMT_IS_FILE) {	/* dest is a file name */
 		static char *msg2[2] = {"create", "append to"};
-		strncpy (V_file, dest, GMT_BUFSIZ-1);
+		strncpy (V_file, dest, PATH_MAX-1);
 		append = (V_file[0] == '>');	/* Want to append to existing file */
 		if ((fp = fopen (&V_file[append], (append) ? "a" : "w")) == NULL) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Cannot %s Matrix file %s\n", msg2[append], &V_file[append]);
@@ -3309,7 +3375,7 @@ GMT_LOCAL struct GMT_VECTOR *api_read_vector (struct GMT_CTRL *GMT, void *source
 
 	bool close_file = false, first = true, add_first_segheader = false;
 	uint64_t row = 0, col, dim[GMT_DIM_SIZE] = {0, 0, GMT->current.setting.export_type, 0};
-	char V_file[GMT_BUFSIZ] = {""};
+	char V_file[PATH_MAX] = {""};
 	char line[GMT_BUFSIZ] = {""};
 	FILE *fp = NULL;
 	struct GMT_VECTOR *V = NULL;
@@ -3319,7 +3385,7 @@ GMT_LOCAL struct GMT_VECTOR *api_read_vector (struct GMT_CTRL *GMT, void *source
 	if (src_type == GMT_IS_FILE && !source) src_type = GMT_IS_STREAM;	/* No filename given, default to stdin */
 
 	if (src_type == GMT_IS_FILE) {	/* dest is a file name */
-		strncpy (V_file, source, GMT_BUFSIZ-1);
+		strncpy (V_file, source, PATH_MAX-1);
 		if ((fp = fopen (V_file, "r")) == NULL) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Cannot open Vector file %s\n", V_file);
 			return_null (GMT->parent, GMT_ERROR_ON_FOPEN);
@@ -4404,7 +4470,7 @@ GMT_LOCAL int api_export_ppm (struct GMT_CTRL *GMT, char *fname, struct GMT_IMAG
 		return -1;
 	}
 	fwrite (magic, sizeof (char), strlen (magic), fp);	/* Write magic number, linefeed, comment, and another linefeed */
-	sprintf (dim, "%d %d\n255\n", I->header->n_rows, I->header->n_columns);
+	snprintf (dim, GMT_LEN32, "%d %d\n255\n", I->header->n_rows, I->header->n_columns);
 	fwrite (dim, sizeof (char), strlen (dim), fp);	/* Write dimensions and max color value + linefeeds */
 	/* Now dump the image in scaneline order, with each pixel as (R, G, B) */
 	if (strncmp (I->header->mem_layout, "TRP", 3U)) /* Easy street! */
@@ -5562,7 +5628,7 @@ GMT_LOCAL int api_colors2cpt (struct GMTAPI_CTRL *API, char **str, unsigned int 
 		for (k = 0; gray && k < s_length; k++)
 			if (!isdigit ((*str)[k])) gray = false;	/* Not just a bunch of integers */
 		if (gray) {	/* Must also rule out temporary files like 14334.cpt since the ".cpt" is not present */
-			sprintf (tmp_file, "%s.cpt", *str);	/* Try this as a filename */
+			snprintf (tmp_file, GMT_LEN64, "%s.cpt", *str);	/* Try this as a filename */
 			if (!gmt_access (API->GMT, tmp_file, F_OK))
 				return 0;	/* Probably a process id temp file like 13223.cpt */
 		}
@@ -5985,13 +6051,13 @@ void *GMT_Create_Session (const char *session, unsigned int pad, unsigned int mo
 	GMT_Report (API, GMT_MSG_DEBUG, "GMT_Create_Session initialized GMT structure\n");
 
 	if (mode & GMT_SESSION_LOGERRORS) {	/* Want to redirect errors to a log file */
-		char file[GMT_LEN128] = {""};
+		char file[PATH_MAX] = {""};
 		FILE *fp = NULL;
 		if (API->session_tag == NULL) {
 			GMT_Report (API, GMT_MSG_DEBUG, "Must pass a session tag to be used for error log file name\n");
 			return_null (API, GMT_ARG_IS_NULL);
 		}
-		sprintf (file, "%s.log", API->session_tag);
+		snprintf (file, PATH_MAX, "%s.log", API->session_tag);
 		if ((fp = fopen (file, "w")) == NULL) {
 			GMT_Report (API, GMT_MSG_DEBUG, "Unable to open error log file %s\n", file);
 			return_null (API, GMT_ERROR_ON_FOPEN);
@@ -7017,11 +7083,12 @@ void *GMT_Read_Data (void *V_API, unsigned int family, unsigned int method, unsi
 	}
 	else if (input) {	/* Case 1: Load from a single input, given source. Register it first. */
 		unsigned int first = 0;
-		first = gmt_download_file_if_not_found (API->GMT, input, 0);	/* Deal with downloadable GMT data sets first */
 		/* Must handle special case when a list of colors are given instead of a CPT name.  We make a temp CPT from the colors */
 		if (family == GMT_IS_PALETTE && !just_get_data) { /* CPTs must be handled differently since the master files live in share/cpt and filename is missing .cpt */
 			int c_err = 0;
-			char CPT_file[GMT_LEN256] = {""}, *file = strdup (&input[first]);
+			char CPT_file[PATH_MAX] = {""}, *file = NULL;
+			if (input[0] == '@') first = gmt_download_file_if_not_found (API->GMT, input, 0);	/* Deal with downloadable CPTs */
+			file = strdup (&input[first]);
 			if ((c_err = api_colors2cpt (API, &file, &mode)) < 0) { /* Maybe converted colors to new CPT */
 				gmt_M_str_free (input);
 				gmt_M_str_free (file);
@@ -7038,10 +7105,10 @@ void *GMT_Read_Data (void *V_API, unsigned int family, unsigned int method, unsi
 					gmt_M_str_free (input);
 					return_null (API, GMT_FILE_NOT_FOUND);	/* Failed to find the file anywyere */
 				}
-				if (q) {q[0] = '+'; strncat (CPT_file, q, GMT_LEN256-1);}	/* Add back the z-scale modifier */
+				if (q) {q[0] = '+'; strncat (CPT_file, q, PATH_MAX-1);}	/* Add back the z-scale modifier */
 			}
 			else	/* Got color list, now a temp CPT instead */
-				strncpy (CPT_file, file, GMT_LEN256-1);
+				strncpy (CPT_file, file, PATH_MAX-1);
 			gmt_M_str_free (file);	/* Free temp CPT name */
 			if ((in_ID = GMT_Register_IO (API, family, method, geometry, GMT_IN, wesn, CPT_file)) == GMT_NOTSET) {
 				gmt_M_str_free (input);
@@ -7050,6 +7117,7 @@ void *GMT_Read_Data (void *V_API, unsigned int family, unsigned int method, unsi
 		}
 		else {	/* Not a CPT file but could be remote */
 			char file[PATH_MAX] = {""};
+			first = gmt_download_file_if_not_found (API->GMT, input, 0);	/* Deal with downloadable GMT data sets first */
 			strncpy (file, &input[first], PATH_MAX-1);
 			if (gmt_M_file_is_remotedata (input) && !strstr (input, ".grd"))	/* A remote @earth_relief_xxm|s grid without extension */
 				strcat (file, ".grd");	/* Must supply the .grd */
@@ -7601,7 +7669,7 @@ struct GMT_RECORD *api_get_record_dataset (struct GMTAPI_CTRL *API, unsigned int
 				col_pos = api_pick_in_col_number (GMT, (unsigned int)col);
 				GMT->current.io.curr_rec[col] = D->table[count[GMT_TBL]]->segment[count[GMT_SEG]]->data[col_pos][count[GMT_ROW]];
 			}
-			if (D->table[count[GMT_TBL]]->segment[count[GMT_SEG]]->text)
+			if (D->table[count[GMT_TBL]]->segment[count[GMT_SEG]]->text && D->table[count[GMT_TBL]]->segment[count[GMT_SEG]]->text[count[GMT_ROW]])
 				strncpy (GMT->current.io.curr_trailing_text, D->table[count[GMT_TBL]]->segment[count[GMT_SEG]]->text[count[GMT_ROW]], GMT_BUFSIZ-1);
 			record = &GMT->current.io.record;
 			GMT->common.b.ncol[GMT_IN] = API->current_get_n_columns;
@@ -9697,12 +9765,12 @@ GMT_LOCAL int api_fft_1d (struct GMTAPI_CTRL *API, struct GMT_DATASET *D, int di
 }
 
 GMT_LOCAL char *fft_file_name_with_suffix (struct GMT_CTRL *GMT, char *name, char *suffix) {
-	static char file[GMT_LEN256] = {""};
+	static char file[PATH_MAX] = {""};
 	uint64_t i, j;
 	size_t len;
 
 	if ((len = strlen (name)) == 0) {	/* Grids that are being created have no filename yet */
-		snprintf (file, GMT_LEN256, "tmpgrid_%s.grd", suffix);
+		snprintf (file, PATH_MAX, "tmpgrid_%s.grd", suffix);
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Created grid has no name to derive new names from; choose %s\n", file);
 		return (file);
 	}
@@ -9710,7 +9778,7 @@ GMT_LOCAL char *fft_file_name_with_suffix (struct GMT_CTRL *GMT, char *name, cha
 	if (i) i++;	/* Move to 1st char after / */
 	for (j = len; j > 0 && name[j] != '.'; j--);	/* j points to period before extension, or it is 0 if no extension */
 	len = strlen (&name[i]);
-	strncpy (file, &name[i], GMT_LEN256-1);		/* Make a full copy of filename without leading directories */
+	strncpy (file, &name[i], PATH_MAX-1);		/* Make a full copy of filename without leading directories */
 	for (i = len; i > 0 && file[i] != '.'; i--);	/* i now points to period before extension in file, or it is 0 if no extension */
 	if (i) file[i] = '\0';	/* Truncate at the extension */
 	/* Determine length of new filename and make sure it fits */
@@ -9720,7 +9788,7 @@ GMT_LOCAL char *fft_file_name_with_suffix (struct GMT_CTRL *GMT, char *name, cha
 	if ((GMT_BUFSIZ - len) > 0) {	/* Have enough space */
 		strcat (file, "_");
 		strcat (file, suffix);
-		if (j) strncat (file, &name[j], GMT_LEN256-1);
+		if (j) strncat (file, &name[j], PATH_MAX-1);
 	}
 	else
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "File name [ %s] way too long - trouble in fft_file_name_with_suffix\n", file);
@@ -9927,14 +9995,11 @@ const char * gmt_show_name_and_purpose (void *V_API, const char *component, cons
 	API = api_get_api_ptr (V_API);
 	mode_name = gmtlib_get_active_name (API, name);
 	lib = (component) ? component : core;
-	if (API->GMT->current.setting.use_modern_name || API->GMT->current.setting.run_mode == GMT_MODERN) {	/* Must include the required "gmt " prefix */
-		sprintf (full_name, "gmt %s", mode_name);
-		mode_name = full_name;
-	}
-	snprintf (message, GMT_LEN256, "%s [%s] %s - %s\n\n", mode_name, lib, GMT_version(), purpose);
+	snprintf (full_name, GMT_LEN32, "gmt %s", mode_name);
+	snprintf (message, GMT_LEN256, "%s [%s] %s - %s\n\n", full_name, lib, GMT_version(), purpose);
 	GMT_Message (V_API, GMT_TIME_NONE, message);
 	gmtlib_set_KOP_strings (API);
-	return mode_name;
+	return full_name;
 }
 
 /* Module Extension: Allow listing and calling modules by name */
@@ -10014,17 +10079,20 @@ int GMT_Call_Module (void *V_API, const char *module, int mode, void *args) {
 		if (p_func) break;	/* Found it in this shared library */
 	}
 	if (p_func == NULL) {	/* Not in any of the shared libraries */
-		status = GMT_NOT_A_VALID_MODULE;
+		status = GMT_NOT_A_VALID_MODULE;	/* Most likely, but we will try again: */
 		if (strncasecmp (module, "gmt", 3)) {	/* For any module not already starting with "gmt..." */
-			char gmt_module[32] = "gmt";
-			strncat (gmt_module, module, 28);	/* Prepend "gmt" to module and try again */
-			status = GMT_Call_Module (V_API, gmt_module, mode, args);	/* Recursive call to try with the 'gmt' prefix */
+			char gmt_module[GMT_LEN32] = "gmt";
+			strncat (gmt_module, module, GMT_LEN32-4);	/* Prepend "gmt" to module and try again */
+			status = GMT_Call_Module (V_API, gmt_module, mode, args);	/* Recursive call to try with the 'gmt' prefix this time */
 		}
 	}
-	else if (mode == GMT_MODULE_EXIST)	/* Just wanted to know it is there */
+	else if (mode == GMT_MODULE_EXIST)	/* Just wanted to know it is a valid module */
 		return (GMT_NOERROR);
-	else	/* Call the function and pass back its return value */
-		status = (*p_func) (V_API, mode, args);
+	else {	/* Call the function and pass back its return value */
+		gmt_manage_workflow (API, GMT_USE_WORKFLOW, NULL);		/* First detect and set modern mode if modern mode session dir is found */
+		gmtapi_check_for_modern_oneliner (API, module, mode, args);	/* If a modern mode one-liner we must switch run--mode here */
+		status = (*p_func) (V_API, mode, args);				/* Call the module in peace */
+	}
 	return (status);
 }
 
@@ -10305,7 +10373,7 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 	int family = GMT_NOTSET;	/* -1, or one of GMT_IS_DATASET, GMT_IS_GRID, GMT_IS_PALETTE, GMT_IS_IMAGE */
 	int geometry = GMT_NOTSET;	/* -1, or one of GMT_IS_NONE, GMT_IS_TEXT, GMT_IS_POINT, GMT_IS_LINE, GMT_IS_POLY, GMT_IS_SURFACE */
 	int sdir, k, n_in_added = 0, n_to_add, e, n_pre_arg, n_per_family[GMT_N_FAMILIES];
-	bool deactivate_output = false, strip_colon = false, strip = false;
+	bool deactivate_output = false, deactivate_input = false, strip_colon = false, strip = false;
 	size_t n_alloc, len;
 	const char *keys = NULL;	/* This module's option keys */
 	char **key = NULL;		/* Array of items in keys */
@@ -10446,18 +10514,23 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 		deactivate_output = true;	/* Turn off implicit table output since only secondary -G -G -G is in effect */
 	}
 	/* 1l. Check if this is makecpt using -E or -S with no args */
-	else if (!strncmp (module, "makecpt", 7U) && ((opt = GMT_Find_Option (API, 'E', *head)) || (opt = GMT_Find_Option (API, 'S', *head)))) {
-		if (opt->arg[0] == '\0') {	/* Found the -E or -S option without arguments */
-			gmt_M_str_free (opt->arg);
-			if (opt->option == 'E')	/* Gave -E but we need to pass -E0 */
-				opt->arg = strdup ("0");
-			else	/* Replace -S with -Sr */
-				opt->arg = strdup ("r");
+	else if (!strncmp (module, "makecpt", 7U)) {
+		if (((opt = GMT_Find_Option (API, 'E', *head)) || (opt = GMT_Find_Option (API, 'S', *head)))) {
+			if (opt->arg[0] == '\0') {	/* Found the -E or -S option without arguments */
+				gmt_M_str_free (opt->arg);
+				if (opt->option == 'E')	/* Gave -E but we need to pass -E0 */
+					opt->arg = strdup ("0");
+				else	/* Replace -S with -Sr */
+					opt->arg = strdup ("r");
+			}
+			/* Then add implicit ? if no input file found */
+			if ((opt = GMT_Find_Option (API, GMT_OPT_INFILE, *head)) == NULL) {	/* Must assume implicit input file is available */
+				new_ptr = GMT_Make_Option (API, GMT_OPT_INFILE, "?");
+				*head = GMT_Append_Option (API, new_ptr, *head);
+			}
 		}
-		/* Then add implicit ? if no input file found */
-		if ((opt = GMT_Find_Option (API, GMT_OPT_INFILE, *head)) == NULL) {	/* Must assume implicit input file is available */
-			new_ptr = GMT_Make_Option (API, GMT_OPT_INFILE, "?");
-			*head = GMT_Append_Option (API, new_ptr, *head);
+		else if (API->GMT->current.setting.run_mode == GMT_MODERN && (opt = GMT_Find_Option (API, 'H', *head)) == NULL) {	/* Modern mode, no -H */
+			deactivate_output = true;	/* Turn off implicit output since none is in effect */
 		}
 	}
 	/* 1m. Check if this is the grdgradient module, where primary dataset output should be turned off if -Qc and no -G is set */
@@ -10466,7 +10539,18 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 		if ((opt = GMT_Find_Option (API, 'Q', *head)) && opt->arg[0] == 'c')
 			deactivate_output = true;	/* Turn off implicit output since none is in effect */
 	}
-
+	/* 1m. Check if this is the grdgradient module, where primary dataset output should be turned off if -Qc and no -G is set */
+	else if (!strncmp (module, "pstext", 6U) && (opt = GMT_Find_Option (API, 'F', *head))) {
+		/* With -F+c<just>+t<label> there is no file to read */
+		if (gmt_no_pstext_input (API, opt->arg))
+			deactivate_input = true;	/* Turn off implicit input since none is in effect */
+	}
+	/* 1n. Check that in modern mode, grd2cpt requires -H to write out to stdout */
+	else if (!strncmp (module, "grd2cpt", 7U)) {
+		if (API->GMT->current.setting.run_mode == GMT_MODERN && (opt = GMT_Find_Option (API, 'H', *head)) == NULL) {	/* Modern mode, no -H */
+			deactivate_output = true;	/* Turn off implicit output since none is in effect */
+		}
+	}
 	gmt_M_str_free (module);
 
 	/* 2a. Get the option key array for this module */
@@ -10475,7 +10559,7 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 	if (gmt_M_is_verbose (API->GMT, GMT_MSG_DEBUG)) {
 		char txt[4] = {""};
 		for (k = 0; k < GMT_N_FAMILIES; k++) if (n_per_family[k] != GMT_NOTSET) {
-			(n_per_family[k] == GMTAPI_UNLIMITED) ? sprintf (txt, ">1") : sprintf (txt, "%d", n_per_family[k]);
+			(n_per_family[k] == GMTAPI_UNLIMITED) ? snprintf (txt, 4, ">1") : snprintf (txt, 4, "%d", n_per_family[k]);
 			GMT_Report (API, GMT_MSG_DEBUG, "GMT_Encode_Options: For %s we expect %s input objects\n", GMT_family[k], txt);
 		}
 	}
@@ -10483,6 +10567,10 @@ struct GMT_RESOURCE *GMT_Encode_Options (void *V_API, const char *module_name, i
 	/* 2b. Make some specific modifications to the keys given the options passed */
 	if (deactivate_output && (k = api_get_key (API, GMT_OPT_OUTFILE, key, n_keys)) >= 0)
 		key[k][K_DIR] = api_not_required_io (key[k][K_DIR]);	/* Since an explicit output file already specified or not required */
+
+	/* 2c. Make some specific modifications to the keys given the options passed */
+	if (deactivate_input && (k = api_get_key (API, GMT_OPT_INFILE, key, n_keys)) >= 0)
+		key[k][K_DIR] = api_not_required_io (key[k][K_DIR]);	/* Since an explicit input file already specified or not required */
 
 	/* 3. Count command line output files */
 	for (opt = *head; opt; opt = opt->next)
@@ -10923,7 +11011,7 @@ int GMT_Option (void *V_API, const char *options) {
 				break;
 			case 'd':	/* Nodata flag -d, -di, -do */
 				if (p[1] == 'i') arg[k++] = 'k';
-				else if (p[1] == 'o') arg[k++] = 'l';
+				else if (p[1] == 'o') arg[k++] = 'm';
 				else arg[k++] = 'd';
 				break;
 			case 'j':	/* Spherical distance calculation mode */
@@ -10963,6 +11051,7 @@ int GMT_Message (void *V_API, unsigned int mode, const char *format, ...) {
 	size_t source_info_len;
 	char *stamp = NULL;
 	struct GMTAPI_CTRL *API = NULL;
+	FILE *err = stderr;
 	va_list args;
 
 	if (V_API == NULL) return_error (V_API, GMT_NOT_A_SESSION);
@@ -10977,7 +11066,8 @@ int GMT_Message (void *V_API, unsigned int mode, const char *format, ...) {
 	vsnprintf (API->message + source_info_len, GMT_MSGSIZ - source_info_len, format, args);
 	va_end (args);
 	assert (strlen (API->message) < GMT_MSGSIZ);
-	API->print_func (API->GMT->session.std[GMT_ERR], API->message);	/* Do the printing */
+	if (API->GMT) err = API->GMT->session.std[GMT_ERR];
+	API->print_func (err, API->message);	/* Do the printing */
 	return_error (V_API, GMT_NOERROR);
 }
 
@@ -10993,6 +11083,8 @@ int GMT_Report (void *V_API, unsigned int level, const char *format, ...) {
 	/* Message whose output depends on verbosity setting */
 	size_t source_info_len = 0;
 	unsigned int g_level;
+	const char *module_name;
+	FILE *err = stderr;
 	struct GMTAPI_CTRL *API = NULL;
 	struct GMT_CTRL *GMT = NULL;
 	va_list args;
@@ -11001,6 +11093,7 @@ int GMT_Report (void *V_API, unsigned int level, const char *format, ...) {
 	API = api_get_api_ptr (V_API);	/* Get the typecast structure pointer to API */
 	GMT = API->GMT;	/* Short-hand for the GMT sub-structure */
 	g_level = (GMT) ? GMT->current.setting.verbose : 0;
+	if (GMT) err = GMT->session.std[GMT_ERR];
 	if (level > MAX(API->verbose, g_level))
 		return 0;
 	if (format == NULL) return GMT_PTR_IS_NULL;	/* Format cannot be NULL */
@@ -11012,7 +11105,12 @@ int GMT_Report (void *V_API, unsigned int level, const char *format, ...) {
 			source_info_len = strlen (API->message);	/* Update length of message from 0 */
 		}
 	}
-	snprintf (API->message + source_info_len, GMT_MSGSIZ-source_info_len, "%s [%s]: ", (GMT && GMT->init.module_name) ? GMT->init.module_name : API->session_tag, GMT_class[level]);
+	if (GMT && GMT->init.module_name)
+		module_name = ((GMT->current.setting.run_mode == GMT_MODERN)) ? gmtlib_get_active_name (API, GMT->init.module_name) : GMT->init.module_name;
+	else
+		module_name = API->session_tag;
+
+	snprintf (API->message + source_info_len, GMT_MSGSIZ-source_info_len, "%s [%s]: ", module_name, GMT_class[level]);
 	source_info_len = strlen (API->message);
 	va_start (args, format);
 	/* append format to the message: */
@@ -11020,7 +11118,7 @@ int GMT_Report (void *V_API, unsigned int level, const char *format, ...) {
 	va_end (args);
 	assert (strlen (API->message) < GMT_MSGSIZ);
 	gmt_M_memcpy (API->error_msg, API->message, GMT_BUFSIZ-1, char);
-	API->print_func (GMT ? GMT->session.std[GMT_ERR] : stderr, API->message);
+	API->print_func (err, API->message);
 	return_error (V_API, GMT_NOERROR);
 }
 

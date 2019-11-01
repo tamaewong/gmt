@@ -1,23 +1,22 @@
 .. index:: ! pstext
+.. include:: module_core_purpose.rst_
 
 ******
 pstext
 ******
 
-.. only:: not man
-
-    pstext - Plot or typeset text on maps
+|pstext_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**pstext** [ *textfiles* ] |-J|\ *parameters*
+**gmt pstext** [ *textfiles* ] |-J|\ *parameters*
 |SYN_OPT-Rz|
 [ |-A| ]
 |SYN_OPT-B|
-[ |-C|\ [*dx/dy*\ ][\ **+t**\ o\|\O\|\c\|C\ ] ]
+[ |-C|\ [*dx/dy*\ ][\ **+to**\ \|\ **O**\ \|\ **c**\ \|\ **C**\ ] ]
 [ |-D|\ [**j**\ \|\ **J**]\ *dx*\ [/*dy*][\ **+v**\ [*pen*]] ]
 [ |-F|\ [**+a**\ [*angle*]][\ **+c**\ [*justify*]][\ **+f**\ [*font*]][\ **+j**\ [*justify*]][\ **+h**\ \|\ **+l**\|\ **+r**\ [*first*] \|\ **+t**\ *text*\ \|\ **+z**\ [*format*]] ] 
 [ |-G|\ *color* ]
@@ -32,6 +31,7 @@ Synopsis
 [ |SYN_OPT-e| ]
 [ |SYN_OPT-f| ]
 [ |SYN_OPT-h| ]
+[ **-it**\ *word* ]
 [ |SYN_OPT-p| ]
 [ |SYN_OPT-t| ]
 [ |SYN_OPT-:| ]
@@ -43,6 +43,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To plot just the red outlines of the (lon lat text strings) stored in the
 file text.txt on a Mercator plot with the given specifications, use
@@ -72,6 +74,12 @@ To add a typeset figure caption for a 3-inch wide illustration, use
     a figure caption. Highlighted in @;255/0/0;red@;; you can see the locations
     of cities where it is @\_impossible@\_ to get any good Thai food; these are to be avoided.
     EOF
+
+To add a text without using input data but only the fixed text option
+
+   ::
+
+    gmt pstext -R0/10/0/10 -JX14 -Baf -F+f40+cTC+t"Inner Title" -D0/-0.5 -P > figure.ps
 
 .. include:: text_notes.rst_
 

@@ -1,12 +1,11 @@
 .. index:: ! blockmean
+.. include:: module_core_purpose.rst_
 
 *********
 blockmean
 *********
 
-.. only:: not man
-
-    Block average (*x*,\ *y*,\ *z*) data tables by L2 norm
+|blockmean_purpose|
 
 Synopsis
 --------
@@ -164,6 +163,8 @@ Optional Arguments
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To find 5 by 5 minute block mean values from the ASCII data in ship_15.txt, run
 

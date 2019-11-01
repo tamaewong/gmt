@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------
  *
- *      Copyright (c) 1999-2019 by P. Wessel
+ *      Copyright (c) 1999-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU Lesser General Public License for more details.
  *
- *      Contact info: gmt.soest.hawaii.edu
+ *      Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /* x2sys_solve will read the crossover data base and determine the least-
  * squares correction coefficients for the specified field.  The correction
@@ -35,7 +35,8 @@
 #include "mgd77/mgd77.h"
 #include "x2sys.h"
 
-#define THIS_MODULE_NAME	"x2sys_solve"
+#define THIS_MODULE_CLASSIC_NAME	"x2sys_solve"
+#define THIS_MODULE_MODERN_NAME	"x2sys_solve"
 #define THIS_MODULE_LIB		"x2sys"
 #define THIS_MODULE_PURPOSE	"Determine least-squares systematic correction from crossovers"
 #define THIS_MODULE_KEYS	">D}"
@@ -175,7 +176,7 @@ GMT_LOCAL void Free_Ctrl (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *C) {	/*
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s -C<column> -Ec|d|g|h|s|t|z -T<TAG> [<coedata>] [%s] [-W[u]]\n\t[%s] [%s]%s[%s]\n\n",
 		name, GMT_V_OPT, GMT_bi_OPT, GMT_di_OPT, GMT_x_OPT, GMT_PAR_OPT);
@@ -327,7 +328,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 	Ctrl = New_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	if ((error = parse (GMT, Ctrl, options)) != 0) Return (error);
@@ -422,6 +423,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 
 	if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] < bin_expect) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Binary file has %" PRIu64 " columns but %d is required\n", GMT->common.b.ncol[GMT_IN], (int)bin_expect);
+		x2sys_end (GMT, S);
 		Return (GMT_RUNTIME_ERROR);
 	}
 
@@ -432,6 +434,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 	
 	rec_mode = (GMT->common.b.ncol[GMT_IN]) ? GMT_READ_DATA : GMT_READ_MIXED;
 	if (GMT_Init_IO (API, GMT_IS_DATASET, rec_mode, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_NOERROR) {	/* Register data inputs */
+		x2sys_end (GMT, S);
 		Return (API->error);
 	}
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_NOERROR) {	/* Enables data input and sets access mode */
@@ -445,6 +448,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 		if ((In = GMT_Get_Record (API, GMT_READ_DATA, NULL)) == NULL) {	/* Keep returning records until we have no more files */
 			if (gmt_M_rec_is_error (GMT)) {
 				gmt_M_free (GMT, trk_list);
+				x2sys_end (GMT, S);
 				Return (GMT_RUNTIME_ERROR);
 			}
 			else if (gmt_M_rec_is_table_header (GMT)) {
@@ -461,6 +465,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args) {
 					}
 					if (bad) {	/* Must bail */
 						gmt_M_free (GMT, trk_list);
+						x2sys_end (GMT, S);
 						Return (GMT_RUNTIME_ERROR);
 					}
 					first = false;

@@ -1,6 +1,6 @@
 #
 #
-# Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -12,7 +12,7 @@
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
-# Contact info: gmt.soest.hawaii.edu
+# Contact info: www.generic-mapping-tools.org
 # ----------------------------------------------------------------------------
 
 # Use this file to override variables in 'ConfigDefault.cmake' on a per-user
@@ -92,7 +92,7 @@
 #set (GMT_MANDIR "share/doc/gmt/man")
 
 # Install documentation files from this external location instead of creating
-# new PDF and HTML documents from scratch [${GMT_SOURCE_DIR}/doc_release]:
+# new HTML documents from scratch [${GMT_SOURCE_DIR}/doc_release]:
 #set (GMT_INSTALL_EXTERNAL_DOC OFF)
 
 # Install manual pages from this external location instead of creating the
@@ -105,7 +105,7 @@
 ##
 
 # Set URL to GMT Data server [auto]:
-#set (GMT_DATA_URL "data_server_url")
+#set (GMT_DATA_SERVER "data_server_url")
 
 # Set path to GSHHG Shoreline Database [auto]:
 #set (GSHHG_ROOT "gshhg_path")
@@ -124,6 +124,10 @@
 
 # Copy PROJ4's 'share' directory to ${GMT_DATADIR}/GDAL_DATA [FALSE]:
 #set (PROJ_DATA_PATH C:/programs/compa_libs/proj5_GIT/compileds/VC14_64/share/proj)
+
+# FOR WINDOWS ONLY
+# Set path to location of Ghostscript binaries (optional install)
+#set (GHOST_DATA_PATH C:/programs/compa_libs/ghostscript/bin)
 
 # FOR WINDOWS ONLY
 # Set path to location where the gmtmex is located.
@@ -160,10 +164,6 @@
 # If pkg-config is not installed (e.g. on Windows) you need to specify these:
 #set (GLIB_INCLUDE_DIR c:/path/to/glib-dev/include/glib-2.0)
 #set (GLIB_LIBRARIES c:/path/to/glib-dev/lib/glib-2.0.lib)
-
-# Set location of pthreads-win32 (only Windows); needs GMT_USE_THREADS:
-#set (PTHREADS_WIN32_ROOT c:/prefix/of/pthreads-win32)
-#set (GMT_USE_THREADS TRUE)
 
 # Set LAPACK location. Use this when want to link with LAPACK and it's not found automatically
 #set (LAPACK_LIBRARY "V:/lapack-3.5.0/build/lib/liblapack.lib")

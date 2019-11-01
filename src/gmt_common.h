@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 
 /*
@@ -53,6 +53,22 @@ enum GMT_enum_gaps {GMT_NEGGAP_IN_COL = 0,	/* Check if previous minus current co
 #define ISET	1	/* Index into R.active[] for -I (or similar option) */
 #define GSET	2	/* Index into R.active[] for -r */
 #define FSET	3	/* Index into R.active[] for "got -R -I -r from a grid file" */
+
+struct GMT_LEGEND_ITEM {	/* Information about one item in a legend */
+	char label[GMT_LEN128];		/* The symbol label */
+	char header[GMT_LEN128];	/* Header for the whole legend H */
+	char subheader[GMT_LEN128];	/* Subheader, i.e., line label L*/
+	char font[GMT_LEN32];		/* Fontsize to use for current H or L */
+	char gap[GMT_LEN32];		/* Move this much down before placing symbol entry */
+	char pen[2][GMT_LEN32];		/* Pens to use with +d and +v */
+	int draw;			/* 0 no draw, 1 draw horizontal +d, 2 draw vertical +v */
+	int just;			/* Legend placement [TR] */
+	char code;			/* Label justification code (L|C|R) [L] */
+	double size;			/* Fixed symbol size when otherwise cannot set it */
+	double scale;			/* Scale all given sizes, including +s<length> of a line */
+	double width;			/* Override auto-width with a fixed legend width */
+	unsigned int ncols;		/* How many columns to use for symbols */
+};
 
 /*! Structure with all information given via the common GMT command-line options -R -J .. */
 struct GMT_COMMON {
@@ -174,9 +190,9 @@ struct GMT_COMMON {
 		char *multi_segment;    /* To hold a multi-segment string */
 		char string[GMT_LEN256];
 	} h;
-	struct i {	/* -i[<col>|<colrange>,...][+t[<col>]] */
-		bool active, select, orig;
-		uint64_t n_cols;
+	struct i {	/* -i[<col>|<colrange>,...][t[<word>]] */
+		bool active, select, orig, word;
+		uint64_t n_cols, w_col;
 		uint64_t n_actual_cols;
 		char string[GMT_LEN64];
 	} i;
@@ -185,9 +201,9 @@ struct GMT_COMMON {
 		enum GMT_enum_mdist mode;	/* Defaults to GMT_GREATCIRCLE */
 		char string[GMT_LEN8];
 	} j;
-	struct l {	/* -l<label> */
+	struct l {	/* -l[<label>][+s<size>][+t<title>][+n<ncols>][+d<gap>/<pen>] */
 		bool active;
-		char label[GMT_LEN128];
+		struct GMT_LEGEND_ITEM item;
 	} l;
 	struct n {	/* -n[b|c|l|n][+a][+b<BC>][+c][+t<threshold>] */
 		bool active;
@@ -201,9 +217,9 @@ struct GMT_COMMON {
 		double range[2], half_range[2];	/* For periodic non-geographic grids */
 		char string[GMT_LEN64];	/* Copy of argument */
 	} n;
-	struct o {	/* -o[<col>|<colrange>,...][+t[<col>]] */
-		bool active, select, orig;
-		uint64_t n_cols;
+	struct o {	/* -o[<col>|<colrange>,...][t[<word>]] */
+		bool active, select, orig, word;
+		uint64_t n_cols, w_col;
 	} o;
 	struct p {	/* -p<az>[/<el>[/<z0>]]+wlon0/lat0[/z0]][+vx0[cip]/y0[cip]] */
 		bool active;

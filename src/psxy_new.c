@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * Author:	Paul Wessel
@@ -25,9 +25,10 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"psxy"
+#define THIS_MODULE_CLASSIC_NAME	"psxy"
+#define THIS_MODULE_MODERN_NAME	"plot"
 #define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Plot lines, polygons, and symbols on maps"
+#define THIS_MODULE_PURPOSE	"Plot lines, polygons, and symbols in 2-D"
 #define THIS_MODULE_KEYS	"<D{,CC(,T-<,>X},S?(=2"
 #define THIS_MODULE_NEEDS	"Jd"
 #define THIS_MODULE_OPTIONS "-:>BJKOPRUVXYabdefghipt" GMT_OPT("HMmc")
@@ -277,7 +278,7 @@ GMT_LOCAL int plot_decorations (struct GMT_CTRL *GMT, struct GMT_DATASET *D) {
 	/* Accept the dataset D with records of {x, y, size, angle, symbol} and plot rotated symbols at those locations.
 	 * Note: The x,y are projected coordinates in inches, hence our -R -J choice below. */
 	size_t len;
-	char string[GMT_LEN16] = {""}, buffer[GMT_BUFSIZ] = {""}, tmp_file[GMT_LEN64] = {""};
+	char string[GMT_LEN16] = {""}, buffer[GMT_BUFSIZ] = {""}, tmp_file[PATH_MAX] = {""};
 	FILE *fp = NULL;
 	gmt_set_dataset_minmax (GMT, D);	/* Determine min/max for each column and add up total records */
 	if (D->n_records == 0)	/* No symbols to plot */
@@ -370,7 +371,7 @@ GMT_LOCAL void plot_end_vectors (struct GMT_CTRL *GMT, double *x, double *y, uin
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	/* This displays the psxy synopsis and optionally full usage information */
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s [<table>] %s %s [-A[m|p|x|y]]\n", name, GMT_J_OPT, GMT_Rgeoz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-C<cpt>] [-D<dx>/<dy>] [-E[x|y|X|Y][+a][+c[l|f]][+n][+p<pen>][+w<width>]] [-F<arg>] [-G<fill>]\n", GMT_B_OPT);
@@ -409,7 +410,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   in the median.  A 5th extra column with the sample size is required.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   The settings of -W, -G affect the appearance of the 25-75%% box.\n");
 	gmt_segmentize_syntax (API->GMT, 'F', 1);
-	gmt_fill_syntax (API->GMT, 'G', "Specify color or pattern [no fill].");
+	gmt_fill_syntax (API->GMT, 'G', NULL, "Specify color or pattern [no fill].");
 	GMT_Message (API, GMT_TIME_NONE, "\t   -G option can be present in all segment headers (not with -S).\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Use the intensity to modulate the fill color (requires -C or -G).\n");
 	GMT_Option (API, "K");
@@ -508,7 +509,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	if (API->GMT->current.setting.run_mode == GMT_CLASSIC)	/* -T has no purpose in modern mode */
 		GMT_Message (API, GMT_TIME_NONE, "\t-T Ignore all input files.\n");
 	GMT_Option (API, "U,V");
-	gmt_pen_syntax (API->GMT, 'W', "Set pen attributes [Default pen is %s]:", 15);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Set pen attributes [Default pen is %s]:", 15);
 	GMT_Option (API, "X,a,bi");
 	if (gmt_M_showusage (API)) GMT_Message (API, GMT_TIME_NONE, "\t   Default is the required number of columns.\n");
 	GMT_Option (API, "c,di,e,f,g,h,i,p,t,:,.");
@@ -521,7 +522,7 @@ GMT_LOCAL unsigned int parse_old_W (struct GMTAPI_CTRL *API, struct PSXY_CTRL *C
 	if (text[j] == '-') {Ctrl->W.pen.cptmode = 1; j++;}
 	if (text[j] == '+') {Ctrl->W.pen.cptmode = 3; j++;}
 	if (text[j] && gmt_getpen (API->GMT, &text[j], &Ctrl->W.pen)) {
-		gmt_pen_syntax (API->GMT, 'W', "sets pen attributes [Default pen is %s]:", 15);
+		gmt_pen_syntax (API->GMT, 'W', NULL, "sets pen attributes [Default pen is %s]:", 15);
 		n_errors++;
 	}
 	return n_errors;
@@ -569,7 +570,7 @@ GMT_LOCAL unsigned int parse_old_E (struct GMTAPI_CTRL *API, struct PSXY_CTRL *C
 		if (text[j] == '-') {Ctrl->E.mode = 1; j++;}
 		if (text[j] == '+') {Ctrl->E.mode = 2; j++;}
 		if (text[j] && gmt_getpen (API->GMT, &text[j], &Ctrl->E.pen)) {
-			gmt_pen_syntax (API->GMT, 'E', "sets error bar pen attributes", 0);
+			gmt_pen_syntax (API->GMT, 'E', NULL, "sets error bar pen attributes", 0);
 			n_errors++;
 		}
 	}
@@ -672,7 +673,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OP
 								break;
 							case 'p':	/* Error bar pen */
 								if (p[1] && gmt_getpen (GMT, &p[1], &Ctrl->E.pen)) {
-									gmt_pen_syntax (GMT, 'E', "sets error bar pen attributes", 0);
+									gmt_pen_syntax (GMT, 'E', NULL, "sets error bar pen attributes", 0);
 									n_errors++;
 								}
 								break;
@@ -694,7 +695,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OP
 			case 'G':		/* Set fill for symbols or polygon */
 				Ctrl->G.active = true;
 				if (!opt->arg[0] || gmt_getfill (GMT, opt->arg, &Ctrl->G.fill)) {
-					gmt_fill_syntax (GMT, 'G', " "); n_errors++;
+					gmt_fill_syntax (GMT, 'G', NULL, " "); n_errors++;
 				}
 				break;
 			case 'I':	/* Adjust symbol color via intensity */
@@ -728,7 +729,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OP
 				else if (opt->arg[0]) {	/* Most likely connect symbols with line */
 					Ctrl->L.draw = true;
 					if (opt->arg[0] && gmt_getpen (GMT, &c[2], &Ctrl->L.pen)) {
-						gmt_pen_syntax (GMT, 'L', "sets pen attributes [Default pen is %s]:", 3);
+						gmt_pen_syntax (GMT, 'L', NULL, "sets pen attributes [Default pen is %s]:", 3);
 						n_errors++;
 					}
 				}
@@ -736,7 +737,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OP
 					Ctrl->L.polygon = true;
 				if ((c = strstr (opt->arg, "+p")) != NULL) {	/* Want outline */
 					if (c[2] && gmt_getpen (GMT, &c[2], &Ctrl->L.pen)) {
-						gmt_pen_syntax (GMT, 'L', "sets pen attributes [Default pen is %s]:", 3);
+						gmt_pen_syntax (GMT, 'L', NULL, "sets pen attributes [Default pen is %s]:", 3);
 						n_errors++;
 					}
 					Ctrl->L.outline = true;
@@ -773,7 +774,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OP
 				}
 				else if (opt->arg[0]) {
 					if (gmt_getpen (GMT, opt->arg, &Ctrl->W.pen)) {
-						gmt_pen_syntax (GMT, 'W', "sets pen attributes [Default pen is %s]:", 11);
+						gmt_pen_syntax (GMT, 'W', NULL, "sets pen attributes [Default pen is %s]:", 11);
 						n_errors++;
 					}
 				}
@@ -809,7 +810,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSXY_CTRL *Ctrl, struct GMT_OP
 int GMT_plot (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: plot\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -866,7 +867,7 @@ int GMT_psxy (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	if (GMT_Parse_Common (API, THIS_MODULE_OPTIONS, options)) Return (API->error);
 
 	/* Initialize GMT_SYMBOL structure */

@@ -1,6 +1,6 @@
 #
 #
-# Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
-# Contact info: gmt.soest.hawaii.edu
+# Contact info: www.generic-mapping-tools.org
 #-------------------------------------------------------------------------------
 #
 # To modify the cmake process: Edit your cmake/ConfigUser.cmake file
@@ -24,7 +24,7 @@ include (ManageString)
 include (GmtHelperMacros)
 
 if (UNIX AND NOT APPLE)
-        set (LINUX TRUE)
+	set (LINUX TRUE)
 else (UNIX AND NOT APPLE)
 	set (LINUX FALSE)
 endif (UNIX AND NOT APPLE)
@@ -45,33 +45,45 @@ if (NOT OGR2OGR)
 	message (WARNING "Cannot find program ogr2ogr - gmt will be unable to convert Shapefiles to GMT/OGR format")
 	set (GMT_CONFIG_OGR2OGR_MESSAGE "no" CACHE INTERNAL "OGR2OGR config message")
 else (NOT OGR2OGR)
-	set (GMT_CONFIG_OGR2OGR_MESSAGE "yes" CACHE INTERNAL "OGR2OGR config message")
+	execute_process(COMMAND ogr2ogr --version OUTPUT_VARIABLE answer OUTPUT_STRIP_TRAILING_WHITESPACE)
+	string (REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" answer "${answer}")
+	set (GMT_CONFIG_OGR2OGR_MESSAGE "yes (${answer})" CACHE INTERNAL "OGR2OGR config message")
 endif (NOT OGR2OGR)
+
 # Find executable needed by psconvert
 find_program (GDAL_TRANSLATE gdal_translate)
 if (NOT GDAL_TRANSLATE)
 	message (WARNING "Cannot find program gdal_translate - psconvert will be unable to convert TIFF to GeoTIFF")
 	set (GMT_CONFIG_GDAL_TRANSLATE_MESSAGE "no" CACHE INTERNAL "GDAL_TRANSLATE config message")
 else (NOT GDAL_TRANSLATE)
-	set (GMT_CONFIG_GDAL_TRANSLATE_MESSAGE "yes" CACHE INTERNAL "GDAL_TRANSLATE config message")
+	execute_process(COMMAND gdal_translate --version OUTPUT_VARIABLE answer OUTPUT_STRIP_TRAILING_WHITESPACE)
+	string (REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" answer "${answer}")
+	set (GMT_CONFIG_GDAL_TRANSLATE_MESSAGE "yes (${answer})" CACHE INTERNAL "GDAL_TRANSLATE config message")
 endif (NOT GDAL_TRANSLATE)
+
 # Find executables needed by movie
 find_program (GM gm)
 if (NOT GM)
 	message (WARNING "Cannot find GraphicsMagick program gm - gmt movie will be unable to make animated GIFs")
 	set (GMT_CONFIG_GM_MESSAGE "no" CACHE INTERNAL "GM config message")
 else (NOT GM)
-	set (GMT_CONFIG_GM_MESSAGE "yes" CACHE INTERNAL "GM config message")
+	execute_process(COMMAND gm help OUTPUT_VARIABLE answer OUTPUT_STRIP_TRAILING_WHITESPACE)
+	string (REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" answer "${answer}")
+	set (GMT_CONFIG_GM_MESSAGE "yes (${answer})" CACHE INTERNAL "GM config message")
 endif (NOT GM)
+
 find_program (FFMPEG ffmpeg)
 if (NOT FFMPEG)
 	message (WARNING "Cannot find ffmpeg - gmt movie will be unable to make movies from frames")
 	set (GMT_CONFIG_FFMPEG_MESSAGE "no" CACHE INTERNAL "FFMPEG config message")
 else (NOT FFMPEG)
-	set (GMT_CONFIG_FFMPEG_MESSAGE "yes" CACHE INTERNAL "FFMPEG config message")
+	execute_process(COMMAND ffmpeg -version OUTPUT_VARIABLE answer OUTPUT_STRIP_TRAILING_WHITESPACE)
+	string (REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" answer "${answer}")
+	set (GMT_CONFIG_FFMPEG_MESSAGE "yes (${answer})" CACHE INTERNAL "FFMPEG config message")
 endif (NOT FFMPEG)
+
+# Find executable needed by docs
 if (LINUX)
-	# Find executable needed by docs
 	find_program (XDGOPEN xdg-open)
 	if (NOT XDGOPEN)
 		message (WARNING "Cannot find program xdg-open - gmt docs will be unable to open the documentation")
@@ -79,18 +91,23 @@ if (LINUX)
 	else (NOT XDGOPEN)
 		set (GMT_CONFIG_OPEN_MESSAGE "yes" CACHE INTERNAL "OPEN config message")
 	endif (NOT XDGOPEN)
-	# Find executable needed by psconvert
+else (LINUX)
+	set (GMT_CONFIG_OPEN_MESSAGE "yes" CACHE INTERNAL "OPEN config message")
+endif (LINUX)
+
+# Find executable needed by psconvert
+if (WIN32)
+	set (GMT_CONFIG_GS_MESSAGE "yes" CACHE INTERNAL "GS config message")
+else (WIN32)
 	find_program (GS gs)
 	if (NOT GS)
 		message (WARNING "Cannot find ghostscript program gs - gmt psconvert will be unable to convert PostScript to other formats")
 		set (GMT_CONFIG_GS_MESSAGE "no" CACHE INTERNAL "GS config message")
 	else (NOT GS)
-		set (GMT_CONFIG_GS_MESSAGE "yes" CACHE INTERNAL "GS config message")
+		execute_process(COMMAND gs --version OUTPUT_VARIABLE answer OUTPUT_STRIP_TRAILING_WHITESPACE)
+		set (GMT_CONFIG_GS_MESSAGE "yes (${answer})" CACHE INTERNAL "GS config message")
 	endif (NOT GS)
-else (LINUX)
-	set (GMT_CONFIG_OPEN_MESSAGE "yes" CACHE INTERNAL "OPEN config message")
-	set (GMT_CONFIG_GS_MESSAGE "yes" CACHE INTERNAL "GS config message")
-endif (LINUX)
+endif (WIN32)
 
 # Find libraries
 message (STATUS "Searching dependent libraries. This may take a few minutes...")
@@ -217,8 +234,8 @@ endif (DEFINED GMT_ENABLE_OPENMP)
 find_package (OpenMP)
 if (OPENMP_FOUND AND GMT_OPENMP)
 	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-	set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
-	set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
+	set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+	set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_SHARED_LINKER_FLAGS}")
 	set (HAVE_OPENMP TRUE CACHE INTERNAL "OpenMP enabled." FORCE)
 	set (GMT_CONFIG_OPENMP_MESSAGE "enabled"
 		CACHE INTERNAL "OPENMP config message")
@@ -238,44 +255,6 @@ if (OPENMP_FOUND AND NOT GMT_OPENMP)
 	set (GMT_CONFIG_OPENMP_MESSAGE "disabled (GMT_OPENMP not set)"
 		CACHE INTERNAL "OPENMP config message")
 endif (OPENMP_FOUND AND NOT GMT_OPENMP)
-
-if (WIN32)
-	# find pthreads-win32
-	find_path (PTHREADS_INCLUDE_DIR pthread.h
-		HINTS ${PTHREADS_WIN32_ROOT}
-		PATH_SUFFIXES include)
-	find_library(PTHREADS_WIN32_LIBRARY
-		NAMES pthreadVC2
-		HINTS ${PTHREADS_WIN32_ROOT}
-		PATH_SUFFIXES lib)
-	if (PTHREADS_INCLUDE_DIR AND PTHREADS_WIN32_LIBRARY)
-		set (Threads_FOUND TRUE)
-		set (CMAKE_THREAD_LIBS_INIT ${PTHREADS_WIN32_LIBRARY})
-		mark_as_advanced (
-			CMAKE_THREAD_LIBS_INIT
-			PTHREADS_INCLUDE_DIR
-			PTHREADS_WIN32_LIBRARY)
-		message (STATUS "Found pthreads-win32: ${PTHREADS_WIN32_LIBRARY}")
-	endif (PTHREADS_INCLUDE_DIR AND PTHREADS_WIN32_LIBRARY)
-	set (Threads_FOUND FALSE)
-else (WIN32)
-	# find pthreads
-  set (CMAKE_THREAD_PREFER_PTHREAD TRUE)
-  find_package (Threads)
-endif (WIN32)
-
-# build pthreads example
-if (Threads_FOUND)
-	set (HAVE_PTHREAD TRUE CACHE INTERNAL "System has pthread.h")
-	add_executable (pthreads_example pthreads_example.c)
-	include_directories(${PTHREADS_INCLUDE_DIR})
-	target_link_libraries(pthreads_example ${CMAKE_THREAD_LIBS_INIT})
-	set (GMT_CONFIG_PTHREAD_MESSAGE "enabled"
-		CACHE INTERNAL "PTHREAD config message")
-else (Threads_FOUND)
-	set (GMT_CONFIG_PTHREAD_MESSAGE "disabled"
-		CACHE INTERNAL "PTHREAD config message")
-endif (Threads_FOUND)
 
 find_package(GLIB COMPONENTS gthread)
 if (GLIB_FOUND AND GMT_USE_THREADS)
@@ -380,7 +359,7 @@ set (GMT_LIB_SRCS block_subs.h common_byteswap.h common_math.h
 	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_psl.h gmt_shore.h gmt_gsformats.h
 	gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h gmt_cpt_masters.h
 	gmt_types.h gmt_unique.h gmt_version.h gshhg_version.h postscriptlight.h
-	s_rint.h triangle.h gmt.h gmt_resources.h gmt_private.h subplot.c revert.c
+	s_rint.h triangle.h gmt.h gmt_resources.h gmt_private.h subplot.c
 	gmt_error_codes.h gmt_api.c gmt_bcr.c gmt_calclock.c gmt_cdf.c gmt_compat.c
 	gmt_customio.c gmt_dcw.c gmt_error.c gmt_fft.c gmt_grdio.c gmt_io.c
 	gmt_memory.c gmt_nc.c gmt_notposix.c gmt_proj.c gmt_shore.c gmt_sph.c
@@ -477,7 +456,7 @@ if (BUILD_SUPPLEMENTS)
 	# supplement directories (only those, which are to be included in gmtlib)
 	# EXTRA_BUILD_DIRS are for testing new supplements that are not yet in
 	# subversion. See cmake/ConfigUserTemplate.cmake for setting this parameter.
-	set (GMT_SUPPL_DIRS gshhg img meca mgd77 potential segy
+	set (GMT_SUPPL_DIRS geodesy gshhg img mgd77 potential segy seis
 		spotter x2sys ${EXTRA_BUILD_DIRS})
 endif (BUILD_SUPPLEMENTS)
 
@@ -702,32 +681,6 @@ if (BUILD_DEVELOPER)
 		COMPONENT Runtime)
 	install (FILES compat/qsort.h
 		DESTINATION ${GMT_INCLUDEDIR}/compat
-		COMPONENT Runtime)
-	# Install gshhg supplement headers in separate subdirectory [These have no #define HAVE_* configuration]
-	install (FILES gshhg/gshhg.h gshhg/gmt_gshhg.h
-		DESTINATION ${GMT_INCLUDEDIR}/gshhg
-		COMPONENT Runtime)
-	# Install meca supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
-	install (FILES meca/meca.h meca/utilmeca.h
-		DESTINATION ${GMT_INCLUDEDIR}/meca
-		COMPONENT Runtime)
-	# Install mgd77 supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
-	install (FILES mgd77/cm4_functions.h mgd77/mgd77_e77.h mgd77/mgd77_rls_coeffs.h mgd77/mgd77snifferdefaults.h
-		mgd77/mgd77.h mgd77/mgd77_functions.h mgd77/mgd77defaults.h mgd77/mgd77_IGF_coeffs.h mgd77/mgd77_init.h
-		mgd77/mgd77magref.h mgd77/mgd77_codes.h mgd77/mgd77_recalc.h mgd77/mgd77sniffer.h
-		DESTINATION ${GMT_INCLUDEDIR}/mgd77
-		COMPONENT Runtime)
-	# Install potential supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
-	install (FILES potential/okbfuns.h
-		DESTINATION ${GMT_INCLUDEDIR}/potential
-		COMPONENT Runtime)
-	# Install spotter supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
-	install (FILES spotter/spotter.h
-		DESTINATION ${GMT_INCLUDEDIR}/spotter
-		COMPONENT Runtime)
-	# Install x2sys supplements headers in separate subdirectory [These have no #define HAVE_* configuration]
-	install (FILES x2sys/x2sys.h
-		DESTINATION ${GMT_INCLUDEDIR}/x2sys
 		COMPONENT Runtime)
 	# Install Configured Developer headers [These are produced by cmake from *.h.in files]
 	install (FILES ${PROJECT_BINARY_DIR}/src/config.h ${PROJECT_BINARY_DIR}/src/gmt_config.h

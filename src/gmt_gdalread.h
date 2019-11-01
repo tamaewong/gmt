@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 
 /*!
@@ -56,9 +56,10 @@ struct GMT_GDALWRITE_CTRL {
 		float *cpt;
 	} C;
 	struct  GW_P {             /* Proj4/WKT string */
-		bool   active;
-		char  *ProjRefPROJ4;
-		char  *ProjRefWKT;
+		bool  active;
+		char *ProjRefPROJ4;             /* To store a referencing system string in PROJ.4 format */
+		char *ProjRefWKT;               /* To store a referencing system string in WKT format */
+		int   ProjRefEPSG;              /* To store a referencing system EPSG code */
 	} P;
 };
 

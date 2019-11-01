@@ -1,19 +1,18 @@
 .. index:: ! pssolar
+.. include:: module_core_purpose.rst_
 
 *******
 pssolar
 *******
 
-.. only:: not man
-
-    pssolar - Calculate and plot the day-night terminator
+|pssolar_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**pssolar** 
+**gmt pssolar**
 [ |SYN_OPT-B| ]
 [ |-C| ]
 [ |-G|\ *fill*\ \|\ **c** ]
@@ -43,6 +42,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 Print current Sun position and Sunrise, Sunset times at:
 

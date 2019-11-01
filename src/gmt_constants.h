@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /*
  * gmt_constants.h contains definitions of constants used through GMT.
@@ -76,6 +76,7 @@
 #define GMT_CONV4_LIMIT	 1.0e-4		/* Less tight convergence limit or "close to zero" limit */
 
 #define GMT_ASCII_GS	29	/* ASCII code for group separator (temporarily replacing tabs) */
+#define GMT_ASCII_RS	30	/* ASCII code for record separator (temporarily replacing spaces in filenames) */
 #define GMT_ASCII_US	31	/* ASCII code for unit separator (temporarily replacing spaces in quoted text) */
 
 #define GMT_RENAME_FILE	0
@@ -211,8 +212,12 @@ enum GMT_swap_direction {
 #define GMT_CPT_C_REVERSE	1	/* Reverse CPT colors */
 #define GMT_CPT_Z_REVERSE	2	/* Reverse CPT z-values */
 
+/* Default CPTs are initialized in gmt_init.c; see end of gmtinit_new_GMT_ctrl */ 
 #define GMT_DEFAULT_CPT		0	/* Default index into GMT->init.cpt[] array */
-#define GMT_N_CPT		3	/* Number of default CPT types (see GMT->init.cpt in gmt_init.c) */
+#define GMT_N_CPT		3		/* Number of default CPT types (see GMT->init.cpt in gmt_init.c) */
+#define GMT_DEFAULT_CPT_NAME	"turbo"
+#define GMT_DEM_CPT_NAME		"geo"
+#define GMT_SRTM_CPT_NAME		"srtm"
 
 #define GMT_IS_ROMAN_LCASE	1	/* For converting arabic numerals to Roman */
 #define GMT_IS_ROMAN_UCASE	2
@@ -220,6 +225,10 @@ enum GMT_swap_direction {
 /* Settings for the MAP_FRAME_TYPE = graph */
 #define GMT_GRAPH_EXTENSION		7.5	/* In percent */
 #define GMT_GRAPH_EXTENSION_UNIT	'%'	/* In percent */
+
+/* Modes for subplot status */
+#define GMT_SUBPLOT_ACTIVE	1
+#define GMT_PANEL_NOTSET	2
 
 /*! Codes for grdtrack */
 enum GMT_enum_tracklayout {
@@ -269,6 +278,16 @@ enum GMT_enum_index {
 /*! Various mode for auto-download */
 enum GMT_enum_download {
 	GMT_NO_DOWNLOAD = 0, GMT_YES_DOWNLOAD = 1};
+
+/*! Various mode for auto-legend pens */
+enum GMT_enum_autolegend {
+	GMT_LEGEND_PEN_D  = 0, GMT_LEGEND_PEN_V  = 1,
+	GMT_LEGEND_DRAW_D = 1, GMT_LEGEND_DRAW_V = 2};
+
+//#define GMT_LEGEND_DX1_MUL 1.0	/* Default offset from margin to center of symbol if given as '-' times max symbol size */
+//#define GMT_LEGEND_DX2_MUL 2.0	/* Default offset from margin to start of label if given as '-' times max symbol size */
+#define GMT_LEGEND_DX1_MUL 0.5	/* Default offset from margin to center of symbol if given as '-' times max symbol size */
+#define GMT_LEGEND_DX2_MUL 1.5	/* Default offset from margin to start of label if given as '-' times max symbol size */
 
 /*! Various mode for axes */
 enum GMT_enum_oblique {
@@ -481,7 +500,7 @@ enum GMT_enum_curl {GMT_REGULAR_FILE = 0,	/* Regular file the may or may not exi
 #define GMT_DATA_PREFIX "earth_relief_"				/* Special prefix for global relief data sets */
 #define GMT_SRTM_PREFIX "srtm_relief_"				/* Special prefix for srtm relief data sets when ocean is not requested */
 #define GMT_SRTM_EXTENSION_REMOTE  "jp2"			/* Tile extension of JPEG2000 files to be downloaded */
-#define GMT_SRTM_EXTENSION_REMOTE_LEN  3U			/* Length of JPEG2000 file extension */
+#define GMT_SRTM_EXTENSION_REMOTE_LEN  4U			/* Length of JPEG2000 file extension (+1) */
 #define GMT_SRTM_EXTENSION_LOCAL "nc"				/* Tile extension of nc short int files to be saved */
 #define GMT_SRTM_EXTENSION_LOCAL_LEN 2U				/* Length of  nc short int file extension */
 

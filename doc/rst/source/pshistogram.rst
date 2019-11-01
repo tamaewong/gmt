@@ -1,19 +1,18 @@
 .. index:: ! pshistogram
+.. include:: module_core_purpose.rst_
 
 ***********
 pshistogram
 ***********
 
-.. only:: not man
-
-    pshistogram - Calculate and plot histograms
+|pshistogram_purpose|
 
 Synopsis
 --------
 
 .. include:: common_SYN_OPTs.rst_
 
-**pshistogram** [ *table* ] |-J|\ **x**\ \|\ **X**\ *parameters*
+**gmt pshistogram** [ *table* ] |-J|\ **x**\ \|\ **X**\ *parameters*
 |-T|\ [\ *min/max*\ /]\ *inc*\ [**n**] \|\ |-T|\ *file*\ \|\ *list*
 [ |-A| ]
 [ |SYN_OPT-B| ]
@@ -50,6 +49,8 @@ Synopsis
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To draw a histogram of the data v3206.t containing seafloor depths,
 using a 250 meter bin width, center bars, and draw bar outline, use:

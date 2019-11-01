@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
  *
- *  Copyright (c) 2005-2019 by P. Wessel
+ *  Copyright (c) 2005-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *  See README file for copying and redistribution conditions.
  *
  *  File:       mgd77.c
@@ -260,7 +260,7 @@ static inline void mgd77_init_columns (struct MGD77_CONTROL *F) {
 
 static inline void MGD77_Path_Init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F) {
 	size_t n_alloc = GMT_SMALL_CHUNK;
-	char file[GMT_BUFSIZ] = {""}, line[GMT_BUFSIZ] = {""};
+	char file[PATH_MAX] = {""}, line[GMT_BUFSIZ] = {""};
 	FILE *fp = NULL;
 
 	MGD77_Set_Home (GMT, F);
@@ -2696,7 +2696,7 @@ int MGD77_Get_Path (struct GMT_CTRL *GMT, char *track_path, char *track, struct 
 	int has_suffix = MGD77_NOT_SET;
 	unsigned int id, fmt, f_start = 0, f_stop = 0;
 	bool append = false, hard_path;
-	char geo_path[GMT_BUFSIZ] = {""};
+	char geo_path[PATH_MAX] = {""};
 
 	for (fmt = 0; fmt < MGD77_FORMAT_ANY; fmt++) {	/* Determine if given track name contains one of the 4 possible extensions */
 		if (strchr (track, '.') && (strlen(track)-strlen(MGD77_suffix[fmt])) > 0 && !strncmp (&track[strlen(track)-strlen(MGD77_suffix[fmt])], MGD77_suffix[fmt], strlen(MGD77_suffix[fmt])))
@@ -2754,7 +2754,7 @@ int MGD77_Get_Path (struct GMT_CTRL *GMT, char *track_path, char *track, struct 
 		if (append)	/* No extension, must append extension */
 			sprintf (geo_path, "%s.%s", track, MGD77_suffix[fmt]);
 		else
-			strncpy (geo_path, track, GMT_BUFSIZ-1);	/* Extension already there */
+			strncpy (geo_path, track, PATH_MAX-1);	/* Extension already there */
 
 		/* Here we have a relative (or absolute, if hard path was given) path.  First look in current directory */
 
@@ -2824,7 +2824,7 @@ int MGD77_Open_File (struct GMT_CTRL *GMT, char *leg, struct MGD77_CONTROL *F, i
 		if (has_suffix == MGD77_NOT_SET)	/* file name given without extension */
 			sprintf (F->path, "%s.%s", leg, MGD77_suffix[F->format]);
 		else
-			strncpy (F->path, leg, GMT_BUFSIZ-1);
+			strncpy (F->path, leg, PATH_MAX-1);
 	}
 	else
 		return (MGD77_UNKNOWN_MODE);
@@ -3980,6 +3980,7 @@ int MGD77_Process_Ignore (struct GMT_CTRL *GMT, char code, char *format) {
 void MGD77_Init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F) {
 	/* Initialize MGD77 control system */
 	int i, k;
+	char *name = gmt_putusername(GMT);
 
 	gmt_M_memset (F, 1, struct MGD77_CONTROL);		/* Initialize structure */
 	MGD77_Path_Init (GMT, F);
@@ -3999,7 +4000,8 @@ void MGD77_Init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F) {
 	if (strcmp (F->utime.epoch, GMT->current.setting.time_system.epoch)) F->adjust_time = true;
 	gmt_M_memset (mgd77_range, MGD77_N_DATA_EXTENDED, struct MGD77_LIMITS);
 	for (i = 0; i < MGD77_SET_COLS; i++) MGD77_this_bit[i] = 1U << i;
-	strncpy (F->user, gmt_putusername(GMT), MGD77_COL_ABBREV_LEN);
+	strncpy (F->user, name, MGD77_COL_ABBREV_LEN);
+	gmt_M_str_free (name);
 	F->desired_column = gmt_M_memory (GMT, NULL, MGD77_MAX_COLS, char *);	/* Allocate array pointer for column names */
 	F->verbose_level = 0;
 	F->verbose_dest = 2;
@@ -4041,7 +4043,7 @@ void MGD77_Reset (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F) {
 	F->rec_no = F->n_out_columns = F->bit_pattern[0] = F->bit_pattern[1] = F->n_constraints = F->n_exact = F->n_bit_tests = 0;
 	F->no_checking = false;
 	gmt_M_memset (F->NGDC_id, MGD77_COL_ABBREV_LEN, char);
-	gmt_M_memset (F->path, GMT_BUFSIZ, char);
+	gmt_M_memset (F->path, PATH_MAX, char);
 	F->fp = NULL;
 	F->nc_id = F->nc_recid = MGD77_NOT_SET;
 	F->format = MGD77_FORMAT_ANY;
@@ -6070,7 +6072,7 @@ bool MGD77_fake_times (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct MGD
 }
 
 void MGD77_CM4_init (struct GMT_CTRL *GMT, struct MGD77_CONTROL *F, struct MGD77_CM4 *CM4) {
-	char file[GMT_BUFSIZ] = {""};
+	char file[PATH_MAX] = {""};
 	MGD77_Set_Home (GMT, F);
 
 	gmt_M_memset (CM4, 1, struct MGD77_CM4);	/* All is set to 0/false */

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  *
- *	Copyright (c) 1991-2019 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *	GNU Lesser General Public License for more details.
  *
- *	Contact info: gmt.soest.hawaii.edu
+ *	Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /* Brief synopsis: pscontour will read a file of points in the plane, performs the
  * Delaunay triangulation, and contours these triangles.  As an option
@@ -26,7 +26,8 @@
 
 #include "gmt_dev.h"
 
-#define THIS_MODULE_NAME	"pscontour"
+#define THIS_MODULE_CLASSIC_NAME	"pscontour"
+#define THIS_MODULE_MODERN_NAME	"contour"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Contour table data by direct triangulation"
 #define THIS_MODULE_KEYS	"<D{,AD)=t,CC(,ED(,DDD,G?(=1,>X}@<D{,AD)=t,CC(,ED(,DD),G?(=1"
@@ -314,6 +315,8 @@ GMT_LOCAL void sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, 
 
 	/* Here, only the polygons that are innermost (containing the local max/min, will have do_it = true */
 
+	PSL_settextmode (PSL, PSL_TXTMODE_MINUS);	/* Replace hyphens with minus signs */
+
 	for (pol = 0; pol < n; pol++) {
 		if (!save[pol].do_it) continue;
 		np = save[pol].n;
@@ -381,12 +384,14 @@ GMT_LOCAL void sort_and_plot_ticks (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, 
 			}
 		}
 	}
+	
+	PSL_settextmode (PSL, PSL_TXTMODE_HYPHEN);	/* Back to leave as is */
 }
 
 GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	struct GMT_PEN P;
 
-	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
+	const char *name = gmt_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: %s <table> %s %s\n", name, GMT_J_OPT, GMT_Rgeoz_OPT);
 	GMT_Message (API, GMT_TIME_NONE, "\t[-A[-|<contours>][<labelinfo>] [%s] [-C<contours>] [-D<template>]\n", GMT_B_OPT);
@@ -435,7 +440,7 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	gmt_cont_syntax (API->GMT, 3, 0);
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Color triangles using the CPT.\n");
 	GMT_Option (API, "K");
-	gmt_pen_syntax (API->GMT, 'L', "Draws the triangular mesh with the specified pen.", 0);
+	gmt_pen_syntax (API->GMT, 'L', NULL, "Draws the triangular mesh with the specified pen.", 0);
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Do NOT clip contours/image at the border [Default clips].\n");
 	GMT_Option (API, "O,P");
 	GMT_Message (API, GMT_TIME_NONE, "\t-Q Do not draw closed contours with less than <cut> points [Draw all contours].\n");
@@ -450,10 +455,10 @@ GMT_LOCAL int usage (struct GMTAPI_CTRL *API, int level) {
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append +d<spacing>[/<ticklength>] (with units) to change defaults [%gp/%gp].\n", TICKED_SPACING, TICKED_LENGTH);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append +lXY (or +l\"low,high\") to place X and Y (or low and high) at the center\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   of local lows and highs.  If no labels are given we default to - and +.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If two characters are passed (e.g., +lLH) we use the as L and H.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   If two characters are passed (e.g., +lLH) we place them at local lows and highs.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   For string labels, simply give two strings separated by a comma (e.g., +llo,hi).\n");
 	GMT_Option (API, "U,V");
-	gmt_pen_syntax (API->GMT, 'W', "Set pen attributes. Append a<pen> for annotated or c<pen> for regular contours [Default].", 0);
+	gmt_pen_syntax (API->GMT, 'W', NULL, "Set pen attributes. Append a<pen> for annotated or c<pen> for regular contours [Default].", 0);
 	GMT_Message (API, GMT_TIME_NONE, "\t   The default settings are\n");
 	P = API->GMT->current.setting.map_default_pen;
 	GMT_Message (API, GMT_TIME_NONE, "\t   Contour pen: %s.\n", gmt_putpen (API->GMT, &P));
@@ -606,7 +611,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCONTOUR_CTRL *Ctrl, struct G
 			case 'L':	/* Draw triangular mesh lines */
 				Ctrl->L.active = true;
 				if (gmt_getpen (GMT, opt->arg, &Ctrl->L.pen)) {
-					gmt_pen_syntax (GMT, 'L', " ", 0);
+					gmt_pen_syntax (GMT, 'L', NULL, " ", 0);
 					n_errors++;
 				}
 				break;
@@ -708,7 +713,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCONTOUR_CTRL *Ctrl, struct G
 			case 'W':	/* Sets pen attributes */
 				Ctrl->W.active = true;
 				k = reset = 0;
-				if (opt->arg[0] == '-' || (opt->arg[0] == '+' && opt->arg[1] != 'c')) {	/* Definitively old-style args */
+				if ((opt->arg[0] == '-' && opt->arg[1]) || (opt->arg[0] == '+' && opt->arg[1] != 'c')) {	/* Definitively old-style args */
 					if (opt->arg[k] == '+') Ctrl->W.cptmode = 1, k++;
 					if (opt->arg[k] == '-') Ctrl->W.cptmode = 3, k++;
 					j = (opt->arg[k] == 'a' || opt->arg[k] == 'c') ? k+1 : k;
@@ -729,7 +734,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCONTOUR_CTRL *Ctrl, struct G
 				}
 				if (j == k && opt->arg[j]) {	/* Set both */
 					if (gmt_getpen (GMT, &opt->arg[j], &Ctrl->W.pen[0])) {
-						gmt_pen_syntax (GMT, 'W', " ", 0);
+						gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 						n_errors++;
 					}
 					else
@@ -743,7 +748,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCONTOUR_CTRL *Ctrl, struct G
 					if (gmt_colorname2index (GMT, txt_a) >= 0) j = k;	/* Found a colorname; wind j back by 1 */
 					id = (opt->arg[k] == 'a') ? 1 : 0;
 					if (gmt_getpen (GMT, &opt->arg[j], &Ctrl->W.pen[id])) {
-						gmt_pen_syntax (GMT, 'W', " ", 0);
+						gmt_pen_syntax (GMT, 'W', NULL, " ", 0);
 						n_errors++;
 					}
 					if (j == k) Ctrl->W.pen[1] = Ctrl->W.pen[0];	/* Must copy since it was not -Wc nor -Wa after all */
@@ -792,7 +797,7 @@ GMT_LOCAL int parse (struct GMT_CTRL *GMT, struct PSCONTOUR_CTRL *Ctrl, struct G
 int GMT_contour (void *V_API, int mode, void *args) {
 	/* This is the GMT6 modern mode name */
 	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
-	if (API->GMT->current.setting.run_mode == GMT_CLASSIC) {
+	if (API->GMT->current.setting.run_mode == GMT_CLASSIC && !API->usage) {
 		GMT_Report (API, GMT_MSG_NORMAL, "Shared GMT module not found: contour\n");
 		return (GMT_NOT_A_VALID_MODULE);
 	}
@@ -845,7 +850,7 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
+	if ((GMT = gmt_init_module (API, THIS_MODULE_LIB, THIS_MODULE_CLASSIC_NAME, THIS_MODULE_KEYS, THIS_MODULE_NEEDS, &options, &GMT_cpy)) == NULL) bailout (API->error); /* Save current state */
 	/* Must intercept any old-style -Eaz/el here and change it to -p */
 	if ((opt = GMT_Find_Option (API, 'E', options)) && gmt_M_compat_check (GMT, 4)) {	/* Got -E, check if given a file */
 		if (gmt_access (GMT, opt->arg, F_OK)) {	/* Argument not a file we can open, so under compat mode we assume we got -Eaz/el */
@@ -1085,6 +1090,7 @@ int GMT_pscontour (void *V_API, int mode, void *args) {
 		}
 		if (Ctrl->C.file && strchr (Ctrl->C.file, ',') && (zc = gmt_list_to_array (GMT, Ctrl->C.file, gmt_M_type (GMT, GMT_IN, GMT_Z), &nc)) == NULL) {
 			GMT_Report (API, GMT_MSG_NORMAL, "Error parsing regular contours from list %s\n", Ctrl->C.file);
+			if (za) gmt_M_free (GMT, za);
 			Return (GMT_RUNTIME_ERROR);
 		}
 		n_contours = na + nc;

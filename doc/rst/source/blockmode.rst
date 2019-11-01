@@ -1,12 +1,11 @@
 .. index:: ! blockmode
+.. include:: module_core_purpose.rst_
 
 *********
 blockmode
 *********
 
-.. only:: not man
-
-    Block average (*x*,\ *y*,\ *z*) data tables by mode estimation
+|blockmode_purpose|
 
 Synopsis
 --------
@@ -185,6 +184,8 @@ Optional Arguments
 
 Examples
 --------
+
+.. include:: explain_example.rst_
 
 To find 5 by 5 minute block mode from the ASCII data in ship_15.txt
 and output a binary table with double precision triplets, run

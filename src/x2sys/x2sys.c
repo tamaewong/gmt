@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------
  *
- *      Copyright (c) 1999-2019 by P. Wessel
+ *      Copyright (c) 1999-2019 by the GMT Team (https://www.generic-mapping-tools.org/team.html)
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -12,7 +12,7 @@
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU Lesser General Public License for more details.
  *
- *      Contact info: www.soest.hawaii.edu/pwessel
+ *      Contact info: www.generic-mapping-tools.org
  *--------------------------------------------------------------------*/
 /* x2sys.c contains the source code for the X2SYS crossover library
  * libx2sys.a.  The code is copylefted under the GNU Public Library
@@ -127,7 +127,7 @@ static int n_mgg_paths = 0; /* Number of these directories */
 
 GMT_LOCAL int mggpath_func (char *leg_path, char *leg) {
 	int id;
-	char geo_path[GMT_BUFSIZ] = {""};
+	char geo_path[PATH_MAX] = {""};
 
 	/* First look in current directory */
 
@@ -154,7 +154,7 @@ GMT_LOCAL int mggpath_func (char *leg_path, char *leg) {
  */
 
 GMT_LOCAL void mggpath_init (struct GMT_CTRL *GMT) {
-	char line[GMT_BUFSIZ] = {""};
+	char line[PATH_MAX] = {""};
 	FILE *fp = NULL;
 
 	gmt_getsharepath (GMT, "mgg", "gmtfile_paths", "", line, R_OK);
@@ -167,7 +167,7 @@ GMT_LOCAL void mggpath_init (struct GMT_CTRL *GMT) {
 		return;
 	}
 
-	while (fgets (line, GMT_BUFSIZ, fp)) {
+	while (fgets (line, PATH_MAX, fp)) {
 		if (line[0] == '#') continue;	/* Comments */
 		if (line[0] == ' ' || line[0] == '\0') continue;	/* Blank line */
 		mgg_path[n_mgg_paths] = gmt_M_memory (GMT, NULL, strlen (line), char);
@@ -225,7 +225,7 @@ void x2sys_path (struct GMT_CTRL *GMT, char *fname, char *path) {
 
 FILE *x2sys_fopen (struct GMT_CTRL *GMT, char *fname, char *mode) {
 	FILE *fp = NULL;
-	char file[GMT_BUFSIZ] = {""};
+	char file[PATH_MAX] = {""};
 
 	if (mode[0] == 'w') {	/* Writing: Do this only in X2SYS_HOME */
 		x2sys_path (GMT, fname, file);
@@ -242,7 +242,7 @@ FILE *x2sys_fopen (struct GMT_CTRL *GMT, char *fname, char *mode) {
 
 int x2sys_access (struct GMT_CTRL *GMT, char *fname, int mode) {
 	int k;
-	char file[GMT_BUFSIZ] = {""};
+	char file[PATH_MAX] = {""};
 	x2sys_path (GMT, fname, file);
 	if ((k = access (file, mode)) != 0) {	/* Not in X2SYS_HOME directory */
 		k = access (fname, mode);	/* Try in current directory */
@@ -645,15 +645,20 @@ int x2sys_read_file (struct GMT_CTRL *GMT, char *fname, double ***data, struct X
 	 */
 
 	uint64_t j;
- 	unsigned int i;
+ 	unsigned int i, start = 0;
 	bool first = true;
 	size_t n_alloc;
 	FILE *fp = NULL;
 	double **z = NULL, *rec = NULL;
-	char path[GMT_BUFSIZ] = {""};
+	char path[PATH_MAX] = {""}, file[GMT_LEN32] = {""};
 
-	if (x2sys_get_data_path (GMT, path, fname, s->suffix)) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_file : Cannot find track %s\n", fname);
+	strncpy (file, fname, GMT_LEN32-1);
+	if (gmt_M_file_is_cache (file)) {	/* Must be a cache file */
+		if (strstr (file, s->suffix) == NULL) {strcat (file, "."); strcat (file, s->suffix); }	/* Must have suffix to download */
+		start = gmt_download_file_if_not_found (GMT, file, 0);
+	}
+	if (x2sys_get_data_path (GMT, path, &file[start], s->suffix)) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_file : Cannot find track %s\n", &file[start]);
   		return (-1);
 	}
 	if ((fp = fopen (path, G->r_mode)) == NULL) {
@@ -695,7 +700,7 @@ int x2sys_read_file (struct GMT_CTRL *GMT, char *fname, double ***data, struct X
 
 	p->n_rows = j;
 	p->year = 0;
-	strncpy (p->name, fname, 31U);
+	strncpy (p->name, &file[start], 31U);
 	*n_rec = p->n_rows;
 
 	return (X2SYS_NOERROR);
@@ -711,14 +716,20 @@ int x2sys_read_gmtfile (struct GMT_CTRL *GMT, char *fname, double ***data, struc
 	int i, year, n_records;	/* These must remain 4-byte ints */
 	int64_t rata_day;
 	uint64_t j;
-	char path[GMT_BUFSIZ] = {""};
+	unsigned int first = 0;
+	char path[PATH_MAX] = {""}, file[GMT_LEN32] = {""};
 	FILE *fp = NULL;
 	double **z = NULL;
 	double NaN = GMT->session.d_NaN, t_off;
 	struct GMTMGG_REC record;
 
+	strncpy (file, fname, GMT_LEN32-1);
+	if (gmt_M_file_is_cache (file)) {	/* Must be a cache file */
+		if (strstr (file, s->suffix) == NULL) {strcat (file, "."); strcat (file, s->suffix); }	/* Must have suffix to download */
+		first = gmt_download_file_if_not_found (GMT, file, 9);
+	}
  	if (n_x2sys_paths) {
-  		if (x2sys_get_data_path (GMT, path, fname, s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
+  		if (x2sys_get_data_path (GMT, path, &file[first], s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
 	}
 	else {
 		char name[82] = {""};
@@ -726,8 +737,8 @@ int x2sys_read_gmtfile (struct GMT_CTRL *GMT, char *fname, double ***data, struc
 			mggpath_init (GMT);
 			s->flags |= 1;
 		}
-		strncpy (name, fname, 81U);
-		if (strstr (fname, ".gmt")) name[strlen(fname)-4] = 0;	/* Name includes .gmt suffix, remove it */
+		strncpy (name, &file[first], 81U);
+		if (strstr (&file[first], ".gmt")) name[strlen(&file[first])-4] = 0;	/* Name includes .gmt suffix, remove it */
 	  	if (mggpath_func (path, name)) return (GMT_GRDIO_FILE_NOT_FOUND);
 
 	}
@@ -808,7 +819,8 @@ int x2sys_read_mgd77file (struct GMT_CTRL *GMT, char *fname, double ***data, str
 	uint64_t i, j;
 	size_t n_alloc = GMT_CHUNK;
 	int col[MGD77_N_DATA_EXTENDED];
-	char path[GMT_BUFSIZ] = {""}, *tvals[MGD77_N_STRING_FIELDS];
+	unsigned int first = 0;
+	char path[PATH_MAX] = {""}, file[GMT_LEN32] = {""}, *tvals[MGD77_N_STRING_FIELDS];
 	double **z = NULL, dvals[MGD77_N_DATA_EXTENDED];
 	struct MGD77_HEADER H;
 	struct MGD77_CONTROL MC;
@@ -816,16 +828,21 @@ int x2sys_read_mgd77file (struct GMT_CTRL *GMT, char *fname, double ***data, str
 
 	MGD77_Init (GMT, &MC);	/* Initialize MGD77 Machinery */
 
+	strncpy (file, fname, GMT_LEN32-1);
+	if (gmt_M_file_is_cache (file)) {	/* Must be a cache file */
+		if (strstr (file, s->suffix) == NULL) {strcat (file, "."); strcat (file, s->suffix); }	/* Must have suffix to download */
+		first = gmt_download_file_if_not_found (GMT, file, 0);
+	}
   	if (n_x2sys_paths) {
-  		if (x2sys_get_data_path (GMT, path, fname, s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
+  		if (x2sys_get_data_path (GMT, path, &file[first], s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
 		if (MGD77_Open_File (GMT, path, &MC, 0)) return (GMT_GRDIO_OPEN_FAILED);
 	}
-	else if (MGD77_Open_File (GMT, fname, &MC, 0))
+	else if (MGD77_Open_File (GMT, &file[first], &MC, 0))
 		return (GMT_GRDIO_FILE_NOT_FOUND);
 	strcpy (s->path, MC.path);
 
-	if (MGD77_Read_Header_Record (GMT, fname, &MC, &H)) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error reading header sequence for cruise %s\n", fname);
+	if (MGD77_Read_Header_Record (GMT, &file[first], &MC, &H)) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error reading header sequence for cruise %s\n", &file[first]);
 		return (GMT_GRDIO_READ_FAILED);
 	}
 
@@ -853,7 +870,7 @@ int x2sys_read_mgd77file (struct GMT_CTRL *GMT, char *fname, double ***data, str
 	MGD77_Free_Header_Record (GMT, &MC, &H);	/* Free up header structure */
 	MGD77_end (GMT, &MC);
 
-	strncpy (p->name, fname, 31U);
+	strncpy (p->name, &file[first], 31U);
 	p->n_rows = j;
 	for (i = 0; i < s->n_fields; i++) z[i] = gmt_M_memory (GMT, z[i], p->n_rows, double);
 
@@ -869,7 +886,8 @@ int x2sys_read_mgd77file (struct GMT_CTRL *GMT, char *fname, double ***data, str
 
 int x2sys_read_mgd77ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, struct X2SYS_INFO *s, struct X2SYS_FILE_INFO *p, struct GMT_IO *G, uint64_t *n_rec) {
 	uint64_t i;
-	char path[GMT_BUFSIZ] = {""};
+	unsigned int first = 0;
+	char path[PATH_MAX] = {""}, file[GMT_LEN32] = {""};
 	double **z = NULL;
 	struct MGD77_DATASET *S = NULL;
 	struct MGD77_CONTROL MC;
@@ -885,21 +903,26 @@ int x2sys_read_mgd77ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, s
 
 	S = MGD77_Create_Dataset (GMT);	/* Get data structure w/header */
 
+	strcpy (file, fname);
+	if (gmt_M_file_is_cache (file)) {	/* Must be a cache file */
+		if (strstr (file, s->suffix) == NULL) {strcat (file, "."); strcat (file, s->suffix); }	/* Must have suffix to download */
+		first = gmt_download_file_if_not_found (GMT, file, 0);
+	}
   	if (n_x2sys_paths) {
-  		if (x2sys_get_data_path (GMT, path, fname, s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
+  		if (x2sys_get_data_path (GMT, path, &file[first], s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
 		if (MGD77_Open_File (GMT, path, &MC, 0)) return (GMT_GRDIO_OPEN_FAILED);
 	}
-	else if (MGD77_Open_File (GMT, fname, &MC, 0))
+	else if (MGD77_Open_File (GMT, &file[first], &MC, 0))
 		return (GMT_GRDIO_FILE_NOT_FOUND);
 	strcpy (s->path, MC.path);
 
-	if (MGD77_Read_Header_Record (GMT, fname, &MC, &S->H)) {	/* Returns info on all columns */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_mgd77ncfile: Error reading header sequence for cruise %s\n", fname);
+	if (MGD77_Read_Header_Record (GMT, &file[first], &MC, &S->H)) {	/* Returns info on all columns */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_mgd77ncfile: Error reading header sequence for cruise %s\n", &file[first]);
      		return (GMT_GRDIO_READ_FAILED);
 	}
 
-	if (MGD77_Read_Data (GMT, fname, &MC, S)) {	/* Only gets the specified columns and barfs otherwise */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_mgd77ncfile: Error reading data set for cruise %s\n", fname);
+	if (MGD77_Read_Data (GMT, &file[first], &MC, S)) {	/* Only gets the specified columns and barfs otherwise */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_mgd77ncfile: Error reading data set for cruise %s\n", &file[first]);
      		return (GMT_GRDIO_READ_FAILED);
 	}
 	MGD77_Close_File (GMT, &MC);
@@ -907,7 +930,7 @@ int x2sys_read_mgd77ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, s
 	z = gmt_M_memory (GMT, NULL, MC.n_out_columns, double *);
 	for (i = 0; i < MC.n_out_columns; i++) z[i] = S->values[i];
 
-	strncpy (p->name, fname, 31U);
+	strncpy (p->name, &file[first], 31U);
 	p->n_rows = S->H.n_records;
 	p->ms_rec = NULL;
 	p->n_segments = 0;
@@ -925,14 +948,20 @@ int x2sys_read_mgd77ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, s
 
 int x2sys_read_ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, struct X2SYS_INFO *s, struct X2SYS_FILE_INFO *p, struct GMT_IO *G, uint64_t *n_rec) {
 	int n_fields, ns = s->n_out_columns;
+	unsigned int first = 0;
 	uint64_t n_expect = GMT_MAX_COLUMNS;
 	uint64_t i, j;
-	char path[GMT_BUFSIZ] = {""};
+	char path[PATH_MAX] = {""}, file[GMT_LEN64] = {""};
 	double **z = NULL, *in = NULL;
 	FILE *fp = NULL;
 	gmt_M_unused(G);
 
-  	if (x2sys_get_data_path (GMT, path, fname, s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
+	strncpy (file, fname, GMT_LEN64-1);
+	if (gmt_M_file_is_cache (file)) {	/* Must be a cache file */
+		if (strstr (file, s->suffix) == NULL) {strcat (file, "."); strcat (file, s->suffix); }	/* Must have suffix to download */
+		first = gmt_download_file_if_not_found (GMT, file, 0);
+	}
+  	if (x2sys_get_data_path (GMT, path, &file[first], s->suffix)) return (GMT_GRDIO_FILE_NOT_FOUND);
 	strcat (path, "?");	/* Set all the required fields */
 	for (i = 0; i < s->n_out_columns; i++) {
 		if (i) strcat (path, "/");
@@ -944,7 +973,7 @@ int x2sys_read_ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, struct
 	gmt_parse_common_options (GMT, "b", 'b', "c");	/* Tell GMT this is a netCDF file */
 
 	if ((fp = gmt_fopen (GMT, path, "r")) == NULL)  {	/* Error in opening file */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_ncfile: Error opening file %s\n", fname);
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_ncfile: Error opening file %s\n", &file[first]);
      		return (GMT_GRDIO_READ_FAILED);
 	}
 
@@ -953,7 +982,7 @@ int x2sys_read_ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, struct
 
 	for (j = 0; j < GMT->current.io.ndim; j++) {
 		if ((in = GMT->current.io.input (GMT, fp, &n_expect, &n_fields)) == NULL || n_fields != ns) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_ncfile: Error reading file %s at record %d\n", fname, j);
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "x2sys_read_ncfile: Error reading file %s at record %d\n", &file[first], j);
 			for (i = 0; i < s->n_out_columns; i++) gmt_M_free (GMT, z[i]);
 			gmt_M_free (GMT, z);
 			gmt_fclose (GMT, fp);
@@ -961,7 +990,7 @@ int x2sys_read_ncfile (struct GMT_CTRL *GMT, char *fname, double ***data, struct
 		}
 		for (i = 0; i < s->n_out_columns; i++) z[i][j] = in[i];
 	}
-	strncpy (p->name, fname, 63U);
+	strncpy (p->name, &file[first], 63U);
 	p->n_rows = GMT->current.io.ndim;
 	p->ms_rec = NULL;
 	p->n_segments = 0;
@@ -1060,7 +1089,7 @@ void x2sys_free_list (struct GMT_CTRL *GMT, char **list, uint64_t n) {
 }
 
 int x2sys_set_system (struct GMT_CTRL *GMT, char *TAG, struct X2SYS_INFO **S, struct X2SYS_BIX *B, struct GMT_IO *G) {
-	char tag_file[GMT_BUFSIZ] = {""}, line[GMT_BUFSIZ] = {""}, p[GMT_BUFSIZ] = {""}, sfile[GMT_BUFSIZ] = {""}, suffix[16] = {""}, unit[2][2];
+	char tag_file[PATH_MAX] = {""}, line[GMT_BUFSIZ] = {""}, p[GMT_BUFSIZ] = {""}, sfile[PATH_MAX] = {""}, suffix[16] = {""}, unit[2][2];
 	unsigned int n, k, pos = 0, geodetic = GMT_IS_GIVEN_RANGE, n_errors = 0;
 	int dist_flag = 0;
 	bool geographic = false, parsed_command_R = false, n_given[2] = {false, false}, c_given = false;
@@ -1133,7 +1162,7 @@ int x2sys_set_system (struct GMT_CTRL *GMT, char *TAG, struct X2SYS_INFO **S, st
 					c_given = true;
 					break;
 				case 'D':
-					strncpy (sfile, &p[2], GMT_BUFSIZ-1);
+					strncpy (sfile, &p[2], PATH_MAX-1);
 					break;
 				case 'E':
 					strncpy (suffix, &p[2], 15);
@@ -1311,7 +1340,7 @@ int x2sys_bix_read_tracks (struct GMT_CTRL *GMT, struct X2SYS_INFO *S, struct X2
 	/* mode = 0 gives linked list [for use in x2sys_put], mode = 1 gives fixed array [for use in x2sys_get] */
 	uint32_t id, flag, last_id = 0;
 	size_t n_alloc = GMT_CHUNK;
-	char track_file[GMT_BUFSIZ] = {""}, track_path[GMT_BUFSIZ] = {""}, line[GMT_BUFSIZ] = {""}, name[GMT_BUFSIZ] = {""};
+	char track_file[PATH_MAX] = {""}, track_path[PATH_MAX] = {""}, line[GMT_BUFSIZ] = {""}, name[GMT_BUFSIZ] = {""};
 	FILE *ftrack = NULL;
 	struct X2SYS_BIX_TRACK_INFO *this_info = NULL;
 
@@ -1373,7 +1402,7 @@ int x2sys_bix_read_tracks (struct GMT_CTRL *GMT, struct X2SYS_INFO *S, struct X2
 
 int x2sys_bix_read_index (struct GMT_CTRL *GMT, struct X2SYS_INFO *S, struct X2SYS_BIX *B, bool swap) {
 	/* Reads the binned index file which is native binary and thus swab is an issue */
-	char index_file[GMT_BUFSIZ] = {""}, index_path[GMT_BUFSIZ] = {""};
+	char index_file[PATH_MAX] = {""}, index_path[PATH_MAX] = {""};
 	FILE *fbin = NULL;
 	uint32_t i, index = 0, flag, no_of_tracks, id; /* These must remain uint32_t */
 
@@ -1499,7 +1528,7 @@ int x2sys_bix_get_index (struct GMT_CTRL *GMT, double x, double y, int *i, int *
  */
 
 void x2sys_path_init (struct GMT_CTRL *GMT, struct X2SYS_INFO *S) {
-	char file[GMT_BUFSIZ] = {""}, line[GMT_BUFSIZ] = {""};
+	char file[PATH_MAX] = {""}, line[GMT_BUFSIZ] = {""};
 	FILE *fp = NULL;
 
 	x2sys_set_home (GMT);
@@ -1530,6 +1559,15 @@ void x2sys_path_init (struct GMT_CTRL *GMT, struct X2SYS_INFO *S) {
 		if (n_x2sys_paths == MAX_DATA_PATHS) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Reached maximum directory (%d) count in %s!\n", MAX_DATA_PATHS, file);
 	}
 	fclose (fp);
+
+	/* Add cache dir, if set */
+	
+	if (GMT->session.CACHEDIR) {
+		x2sys_datadir[n_x2sys_paths] = gmt_M_memory (GMT, NULL, strlen (GMT->session.CACHEDIR)+1, char);
+		strcpy (x2sys_datadir[n_x2sys_paths], GMT->session.CACHEDIR);
+		n_x2sys_paths++;
+		if (n_x2sys_paths == MAX_DATA_PATHS) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Reached maximum directory (%d) count by adding cache dir!\n", MAX_DATA_PATHS);
+	}
 }
 
 /* x2sys_get_data_path takes a track name as argument and returns the full path
@@ -1540,7 +1578,7 @@ int x2sys_get_data_path (struct GMT_CTRL *GMT, char *track_path, char *track, ch
 	unsigned int id;
 	size_t L_suffix, L_track;
 	bool add_suffix;
-	char geo_path[GMT_BUFSIZ] = {""};
+	char geo_path[PATH_MAX] = {""};
 	gmt_M_unused(GMT);
 
 	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "x2sys_get_data_path: Given track %s and suffix %s\n", track, suffix);
@@ -1567,7 +1605,7 @@ int x2sys_get_data_path (struct GMT_CTRL *GMT, char *track_path, char *track, ch
 	if (add_suffix)
 		sprintf (geo_path, "%s.%s", track, suffix);
 	else
-		strncpy (geo_path, track, GMT_BUFSIZ-1);
+		strncpy (geo_path, track, PATH_MAX-1);
 	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "x2sys_get_data_path: Testing path for %s: %s\n", track, geo_path);
 	if (!access(geo_path, R_OK)) {
 		strcpy (track_path, geo_path);
@@ -1593,6 +1631,7 @@ int x2sys_get_data_path (struct GMT_CTRL *GMT, char *track_path, char *track, ch
 		else
 			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "x2sys_get_data_path: Failed path for %s: %s\n", track, track_path);
 	}
+	
 	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "x2sys_get_data_path: No successful path for %s found\n", track);
 	
 	return(1);	/* Schwinehund! */
@@ -2011,7 +2050,7 @@ void x2sys_get_corrtable (struct GMT_CTRL *GMT, struct X2SYS_INFO *S, char *ctab
 	/* Pass aux as NULL if the auxiliary columns do not matter (only used by x2sys_datalist) */
 	unsigned int i, n_items, n_aux = 0, n_cols, missing;
 	int ks;
-	char path[GMT_BUFSIZ] = {""}, **item_names = NULL, **col_name = NULL, **aux_name = NULL;
+	char path[PATH_MAX] = {""}, **item_names = NULL, **col_name = NULL, **aux_name = NULL;
 
 	if (!ctable || !strlen(ctable)) {	/* Try default correction table */
 		sprintf (path, "%s/%s/%s_corrections.txt", X2SYS_HOME, S->TAG, S->TAG);
