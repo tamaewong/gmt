@@ -18,6 +18,7 @@ steps:
     set -x -e
     pip3 install --user sphinx
     echo "##vso[task.prependpath]$HOME/Library/Python/3.7/bin"
+    brew install graphicsmagick ffmpeg || true
   displayName: Install dependencies for building documentation
   condition: eq(variables['BUILD_DOCS'], true)
 
